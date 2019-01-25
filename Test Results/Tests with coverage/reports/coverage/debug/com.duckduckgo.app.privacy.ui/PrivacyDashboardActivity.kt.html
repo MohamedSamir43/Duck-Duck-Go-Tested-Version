@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrivacyDashboardActivity.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.privacy.ui</a> &gt; <span class="el_source">PrivacyDashboardActivity.kt</span></div><h1>PrivacyDashboardActivity.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.privacy.ui
+
+import android.app.Activity
+import androidx.lifecycle.Observer
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import androidx.core.content.ContextCompat
+import android.view.View
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.global.DuckDuckGoActivity
+import com.duckduckgo.app.global.model.Site
+import com.duckduckgo.app.global.view.hide
+import com.duckduckgo.app.global.view.html
+import com.duckduckgo.app.global.view.show
+import com.duckduckgo.app.privacy.renderer.*
+import com.duckduckgo.app.privacy.ui.PrivacyDashboardViewModel.ViewState
+import com.duckduckgo.app.statistics.pixels.Pixel
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelName.*
+import com.duckduckgo.app.tabs.model.TabRepository
+import com.duckduckgo.app.tabs.tabId
+import kotlinx.android.synthetic.main.content_privacy_dashboard.*
+import kotlinx.android.synthetic.main.include_privacy_dashboard_header.*
+import kotlinx.android.synthetic.main.include_toolbar.*
+import javax.inject.Inject
+
+<span class="nc" id="L43">class PrivacyDashboardActivity : DuckDuckGoActivity() {</span>
+
+    @Inject
+<span class="nc bnc" id="L46" title="All 2 branches missed.">    lateinit var repository: TabRepository</span>
+    @Inject
+<span class="nc bnc" id="L48" title="All 2 branches missed.">    lateinit var pixel: Pixel</span>
+
+<span class="nc" id="L50">    private val trackersRenderer = TrackersRenderer()</span>
+<span class="nc" id="L51">    private val upgradeRenderer = PrivacyUpgradeRenderer()</span>
+
+<span class="nc" id="L53">    private val viewModel: PrivacyDashboardViewModel by bindViewModel()</span>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L56">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L57">        setContentView(R.layout.activity_privacy_dashboard)</span>
+<span class="nc" id="L58">        configureToolbar()</span>
+
+<span class="nc" id="L60">        viewModel.viewState.observe(this, Observer&lt;ViewState&gt; {</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            it?.let { render(it) }</span>
+<span class="nc" id="L62">        })</span>
+
+<span class="nc bnc" id="L64" title="All 4 branches missed.">        repository.retrieveSiteData(intent.tabId!!).observe(this, Observer&lt;Site&gt; {</span>
+<span class="nc" id="L65">            viewModel.onSiteChanged(it)</span>
+<span class="nc" id="L66">        })</span>
+
+<span class="nc" id="L68">        privacyGrade.setOnClickListener {</span>
+<span class="nc" id="L69">            onScorecardClicked()</span>
+<span class="nc" id="L70">        }</span>
+
+<span class="nc" id="L72">        privacyToggle.setOnCheckedChangeListener { _, enabled -&gt;</span>
+<span class="nc" id="L73">            viewModel.onPrivacyToggled(enabled)</span>
+<span class="nc" id="L74">        }</span>
+<span class="nc" id="L75">    }</span>
+
+    private fun configureToolbar() {
+<span class="nc" id="L78">        setSupportActionBar(toolbar)</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        supportActionBar?.setDisplayHomeAsUpEnabled(true)</span>
+<span class="nc" id="L80">    }</span>
+
+    private fun render(viewState: ViewState) {
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (isFinishing) {</span>
+<span class="nc" id="L84">            return</span>
+        }
+<span class="nc" id="L86">        privacyBanner.setImageResource(viewState.afterGrade.banner(viewState.toggleEnabled))</span>
+<span class="nc" id="L87">        domain.text = viewState.domain</span>
+<span class="nc" id="L88">        heading.text = upgradeRenderer.heading(this, viewState.beforeGrade, viewState.afterGrade, viewState.toggleEnabled).html(this)</span>
+<span class="nc" id="L89">        httpsIcon.setImageResource(viewState.httpsStatus.icon())</span>
+<span class="nc" id="L90">        httpsText.text = viewState.httpsStatus.text(this)</span>
+<span class="nc" id="L91">        networksIcon.setImageResource(trackersRenderer.networksIcon(viewState.allTrackersBlocked))</span>
+<span class="nc" id="L92">        networksText.text = trackersRenderer.trackersText(this, viewState.trackerCount, viewState.allTrackersBlocked)</span>
+<span class="nc" id="L93">        practicesIcon.setImageResource(viewState.practices.icon())</span>
+<span class="nc" id="L94">        practicesText.text = viewState.practices.text(this)</span>
+<span class="nc" id="L95">        renderToggle(viewState.toggleEnabled)</span>
+<span class="nc" id="L96">        renderTrackerNetworkLeaderboard(viewState)</span>
+<span class="nc" id="L97">        updateActivityResult(viewState.shouldReloadPage)</span>
+<span class="nc" id="L98">    }</span>
+
+    private fun renderTrackerNetworkLeaderboard(viewState: ViewState) {
+
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        if (!viewState.showTrackerNetworkLeaderboard) {</span>
+<span class="nc" id="L103">            hideTrackerNetworkLeaderboard()</span>
+<span class="nc" id="L104">            return</span>
+        }
+
+<span class="nc" id="L107">        trackerNetworkPill1.render(viewState.trackerNetworkTally.elementAtOrNull(0), viewState.domainsVisited)</span>
+<span class="nc" id="L108">        trackerNetworkPill2.render(viewState.trackerNetworkTally.elementAtOrNull(1), viewState.domainsVisited)</span>
+<span class="nc" id="L109">        trackerNetworkPill3.render(viewState.trackerNetworkTally.elementAtOrNull(2), viewState.domainsVisited)</span>
+<span class="nc" id="L110">        showTrackerNetworkLeaderboard()</span>
+<span class="nc" id="L111">    }</span>
+
+    private fun showTrackerNetworkLeaderboard() {
+<span class="nc" id="L114">        trackerNetworkLeaderboardHeader.show()</span>
+<span class="nc" id="L115">        trackerNetworkPill1.show()</span>
+<span class="nc" id="L116">        trackerNetworkPill2.show()</span>
+<span class="nc" id="L117">        trackerNetworkPill3.show()</span>
+<span class="nc" id="L118">        trackerNetworkLeaderboardNotReady.hide()</span>
+<span class="nc" id="L119">    }</span>
+
+    private fun hideTrackerNetworkLeaderboard() {
+<span class="nc" id="L122">        trackerNetworkLeaderboardHeader.hide()</span>
+<span class="nc" id="L123">        trackerNetworkPill1.hide()</span>
+<span class="nc" id="L124">        trackerNetworkPill2.hide()</span>
+<span class="nc" id="L125">        trackerNetworkPill3.hide()</span>
+<span class="nc" id="L126">        trackerNetworkLeaderboardNotReady.show()</span>
+<span class="nc" id="L127">    }</span>
+
+    private fun renderToggle(enabled: Boolean) {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        val backgroundColor = if (enabled) R.color.midGreen else R.color.warmerGray</span>
+<span class="nc" id="L131">        privacyToggleContainer.setBackgroundColor(ContextCompat.getColor(this, backgroundColor))</span>
+<span class="nc" id="L132">        privacyToggle.isChecked = enabled</span>
+<span class="nc" id="L133">    }</span>
+
+    fun onScorecardClicked() {
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        pixel.fire(PRIVACY_DASHBOARD_SCORECARD)</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        startActivity(ScorecardActivity.intent(this, intent.tabId!!))</span>
+<span class="nc" id="L138">    }</span>
+
+    fun onEncryptionClicked(@Suppress(&quot;UNUSED_PARAMETER&quot;) view: View) {
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        pixel.fire(PRIVACY_DASHBOARD_ENCRYPTION)</span>
+<span class="nc" id="L142">    }</span>
+
+    fun onNetworksClicked(@Suppress(&quot;UNUSED_PARAMETER&quot;) view: View) {
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        pixel.fire(PRIVACY_DASHBOARD_NETWORKS)</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">        startActivity(TrackerNetworksActivity.intent(this, intent.tabId!!))</span>
+<span class="nc" id="L147">    }</span>
+
+    fun onPracticesClicked(@Suppress(&quot;UNUSED_PARAMETER&quot;) view: View) {
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        pixel.fire(PRIVACY_DASHBOARD_PRIVACY_PRACTICES)</span>
+<span class="nc bnc" id="L151" title="All 2 branches missed.">        startActivity(PrivacyPracticesActivity.intent(this, intent.tabId!!))</span>
+<span class="nc" id="L152">    }</span>
+
+    fun onLeaderboardClick(@Suppress(&quot;UNUSED_PARAMETER&quot;) view: View) {
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        pixel.fire(PRIVACY_DASHBOARD_GLOBAL_STATS)</span>
+<span class="nc" id="L156">    }</span>
+
+    private fun updateActivityResult(shouldReload: Boolean) {
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        if (shouldReload) {</span>
+<span class="nc" id="L160">            setResult(RELOAD_RESULT_CODE)</span>
+        } else {
+<span class="nc" id="L162">            setResult(Activity.RESULT_OK)</span>
+        }
+<span class="nc" id="L164">    }</span>
+
+<span class="nc" id="L166">    companion object {</span>
+
+        const val RELOAD_RESULT_CODE = 100
+
+        fun intent(context: Context, tabId: String): Intent {
+<span class="nc" id="L171">            val intent = Intent(context, PrivacyDashboardActivity::class.java)</span>
+<span class="nc" id="L172">            intent.tabId = tabId</span>
+<span class="nc" id="L173">            return intent</span>
+        }
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

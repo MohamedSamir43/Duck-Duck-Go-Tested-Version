@@ -1,0 +1,778 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>Test results - Class com.duckduckgo.app.trackerdetection.model.ResourceTypeTest</title>
+<link href="css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="css/style.css" rel="stylesheet" type="text/css"/>
+<script src="js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>Class com.duckduckgo.app.trackerdetection.model.ResourceTypeTest</h1>
+<div class="breadcrumbs">
+<a href="index.html">all</a> &gt; 
+<a href="com.duckduckgo.app.trackerdetection.model.html">com.duckduckgo.app.trackerdetection.model</a> &gt; ResourceTypeTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">8</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">8</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">1m25.40s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox failures" id="successRate">
+<div class="percent">0%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Failed tests</a>
+</li>
+<li>
+<a href="#tab1">Tests</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Failed tests</h2>
+<div class="test">
+<a name="whenRequestContainsCssHeaderThenResourceTypeIsCss"></a>
+<h3 class="failures">whenRequestContainsCssHeaderThenResourceTypeIsCss</h3>
+<span class="code">
+<pre>org.mockito.exceptions.base.MockitoException:
+Mockito cannot mock this class: interface android.webkit.WebResourceRequest.
+
+Mockito can only mock non-private &amp; non-final classes.
+If you're not sure why you're getting this error, please report to the mailing list.
+
+
+
+IMPORTANT INFORMATION FOR ANDROID USERS:
+
+The regular Byte Buddy mock makers cannot generate code on an Android VM!
+To resolve this, please use the 'mockito-android' dependency for your application:
+http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22
+
+Java               : 0.9
+JVM vendor name    : The Android Project
+JVM vendor version : 2.1.0
+JVM name           : Dalvik
+JVM version        : 0.9
+JVM info           : null
+OS name            : Linux
+OS version         : 4.4.124+
+
+
+Underlying exception : java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@fc4ac75
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.buildRequestMock(ResourceTypeTest.kt:125)
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.whenRequestContainsCssHeaderThenResourceTypeIsCss(ResourceTypeTest.kt:56)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:56)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:388)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2145)
+Caused by: java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@fc4ac75
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting$Dispatcher$ForAndroidPVm.loadDex(AndroidClassLoadingStrategy.java:513)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.doLoad(AndroidClassLoadingStrategy.java:400)
+at net.bytebuddy.android.AndroidClassLoadingStrategy.load(AndroidClassLoadingStrategy.java:127)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.load(AndroidClassLoadingStrategy.java:393)
+at net.bytebuddy.dynamic.TypeResolutionStrategy$Passive.initialize(TypeResolutionStrategy.java:85)
+at net.bytebuddy.dynamic.DynamicType$Default$Unloaded.load(DynamicType.java:5468)
+at org.mockito.internal.creation.bytebuddy.SubclassBytecodeGenerator.mockClass(SubclassBytecodeGenerator.java:129)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:37)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:34)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:137)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:350)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:159)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:361)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator.mockClass(TypeCachingBytecodeGenerator.java:32)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMockType(SubclassByteBuddyMockMaker.java:71)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMock(SubclassByteBuddyMockMaker.java:42)
+at org.mockito.android.internal.creation.AndroidByteBuddyMockMaker.createMock(AndroidByteBuddyMockMaker.java:39)
+at org.mockito.internal.util.MockUtil.createMock(MockUtil.java:35)
+at org.mockito.internal.MockitoCore.mock(MockitoCore.java:69)
+at org.mockito.Mockito.mock(Mockito.java:1895)
+... 29 more
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="whenRequestContainsCssUrlThenResourceTypeIsCss"></a>
+<h3 class="failures">whenRequestContainsCssUrlThenResourceTypeIsCss</h3>
+<span class="code">
+<pre>org.mockito.exceptions.base.MockitoException:
+Mockito cannot mock this class: interface android.webkit.WebResourceRequest.
+
+Mockito can only mock non-private &amp; non-final classes.
+If you're not sure why you're getting this error, please report to the mailing list.
+
+
+
+IMPORTANT INFORMATION FOR ANDROID USERS:
+
+The regular Byte Buddy mock makers cannot generate code on an Android VM!
+To resolve this, please use the 'mockito-android' dependency for your application:
+http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22
+
+Java               : 0.9
+JVM vendor name    : The Android Project
+JVM vendor version : 2.1.0
+JVM name           : Dalvik
+JVM version        : 0.9
+JVM info           : null
+OS name            : Linux
+OS version         : 4.4.124+
+
+
+Underlying exception : java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@821ba23
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.buildRequestMock(ResourceTypeTest.kt:125)
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.whenRequestContainsCssUrlThenResourceTypeIsCss(ResourceTypeTest.kt:62)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:56)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:388)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2145)
+Caused by: java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@821ba23
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting$Dispatcher$ForAndroidPVm.loadDex(AndroidClassLoadingStrategy.java:513)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.doLoad(AndroidClassLoadingStrategy.java:400)
+at net.bytebuddy.android.AndroidClassLoadingStrategy.load(AndroidClassLoadingStrategy.java:127)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.load(AndroidClassLoadingStrategy.java:393)
+at net.bytebuddy.dynamic.TypeResolutionStrategy$Passive.initialize(TypeResolutionStrategy.java:85)
+at net.bytebuddy.dynamic.DynamicType$Default$Unloaded.load(DynamicType.java:5468)
+at org.mockito.internal.creation.bytebuddy.SubclassBytecodeGenerator.mockClass(SubclassBytecodeGenerator.java:129)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:37)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:34)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:137)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:350)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:159)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:361)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator.mockClass(TypeCachingBytecodeGenerator.java:32)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMockType(SubclassByteBuddyMockMaker.java:71)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMock(SubclassByteBuddyMockMaker.java:42)
+at org.mockito.android.internal.creation.AndroidByteBuddyMockMaker.createMock(AndroidByteBuddyMockMaker.java:39)
+at org.mockito.internal.util.MockUtil.createMock(MockUtil.java:35)
+at org.mockito.internal.MockitoCore.mock(MockitoCore.java:69)
+at org.mockito.Mockito.mock(Mockito.java:1895)
+... 29 more
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="whenRequestContainsImageHeaderThenResourceTypeIsImage"></a>
+<h3 class="failures">whenRequestContainsImageHeaderThenResourceTypeIsImage</h3>
+<span class="code">
+<pre>org.mockito.exceptions.base.MockitoException:
+Mockito cannot mock this class: interface android.webkit.WebResourceRequest.
+
+Mockito can only mock non-private &amp; non-final classes.
+If you're not sure why you're getting this error, please report to the mailing list.
+
+
+
+IMPORTANT INFORMATION FOR ANDROID USERS:
+
+The regular Byte Buddy mock makers cannot generate code on an Android VM!
+To resolve this, please use the 'mockito-android' dependency for your application:
+http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22
+
+Java               : 0.9
+JVM vendor name    : The Android Project
+JVM vendor version : 2.1.0
+JVM name           : Dalvik
+JVM version        : 0.9
+JVM info           : null
+OS name            : Linux
+OS version         : 4.4.124+
+
+
+Underlying exception : java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@385ac9c
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.buildRequestMock(ResourceTypeTest.kt:125)
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.whenRequestContainsImageHeaderThenResourceTypeIsImage(ResourceTypeTest.kt:44)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:56)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:388)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2145)
+Caused by: java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@385ac9c
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting$Dispatcher$ForAndroidPVm.loadDex(AndroidClassLoadingStrategy.java:513)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.doLoad(AndroidClassLoadingStrategy.java:400)
+at net.bytebuddy.android.AndroidClassLoadingStrategy.load(AndroidClassLoadingStrategy.java:127)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.load(AndroidClassLoadingStrategy.java:393)
+at net.bytebuddy.dynamic.TypeResolutionStrategy$Passive.initialize(TypeResolutionStrategy.java:85)
+at net.bytebuddy.dynamic.DynamicType$Default$Unloaded.load(DynamicType.java:5468)
+at org.mockito.internal.creation.bytebuddy.SubclassBytecodeGenerator.mockClass(SubclassBytecodeGenerator.java:129)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:37)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:34)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:137)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:350)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:159)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:361)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator.mockClass(TypeCachingBytecodeGenerator.java:32)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMockType(SubclassByteBuddyMockMaker.java:71)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMock(SubclassByteBuddyMockMaker.java:42)
+at org.mockito.android.internal.creation.AndroidByteBuddyMockMaker.createMock(AndroidByteBuddyMockMaker.java:39)
+at org.mockito.internal.util.MockUtil.createMock(MockUtil.java:35)
+at org.mockito.internal.MockitoCore.mock(MockitoCore.java:69)
+at org.mockito.Mockito.mock(Mockito.java:1895)
+... 29 more
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="whenRequestContainsImageUrlThenResourceTypeIsImage"></a>
+<h3 class="failures">whenRequestContainsImageUrlThenResourceTypeIsImage</h3>
+<span class="code">
+<pre>org.mockito.exceptions.base.MockitoException:
+Mockito cannot mock this class: interface android.webkit.WebResourceRequest.
+
+Mockito can only mock non-private &amp; non-final classes.
+If you're not sure why you're getting this error, please report to the mailing list.
+
+
+
+IMPORTANT INFORMATION FOR ANDROID USERS:
+
+The regular Byte Buddy mock makers cannot generate code on an Android VM!
+To resolve this, please use the 'mockito-android' dependency for your application:
+http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22
+
+Java               : 0.9
+JVM vendor name    : The Android Project
+JVM vendor version : 2.1.0
+JVM name           : Dalvik
+JVM version        : 0.9
+JVM info           : null
+OS name            : Linux
+OS version         : 4.4.124+
+
+
+Underlying exception : java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@344399a
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.buildRequestMock(ResourceTypeTest.kt:125)
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.whenRequestContainsImageUrlThenResourceTypeIsImage(ResourceTypeTest.kt:50)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:56)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:388)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2145)
+Caused by: java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@344399a
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting$Dispatcher$ForAndroidPVm.loadDex(AndroidClassLoadingStrategy.java:513)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.doLoad(AndroidClassLoadingStrategy.java:400)
+at net.bytebuddy.android.AndroidClassLoadingStrategy.load(AndroidClassLoadingStrategy.java:127)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.load(AndroidClassLoadingStrategy.java:393)
+at net.bytebuddy.dynamic.TypeResolutionStrategy$Passive.initialize(TypeResolutionStrategy.java:85)
+at net.bytebuddy.dynamic.DynamicType$Default$Unloaded.load(DynamicType.java:5468)
+at org.mockito.internal.creation.bytebuddy.SubclassBytecodeGenerator.mockClass(SubclassBytecodeGenerator.java:129)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:37)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:34)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:137)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:350)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:159)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:361)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator.mockClass(TypeCachingBytecodeGenerator.java:32)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMockType(SubclassByteBuddyMockMaker.java:71)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMock(SubclassByteBuddyMockMaker.java:42)
+at org.mockito.android.internal.creation.AndroidByteBuddyMockMaker.createMock(AndroidByteBuddyMockMaker.java:39)
+at org.mockito.internal.util.MockUtil.createMock(MockUtil.java:35)
+at org.mockito.internal.MockitoCore.mock(MockitoCore.java:69)
+at org.mockito.Mockito.mock(Mockito.java:1895)
+... 29 more
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="whenRequestContainsNoHeaderOrUrlThenResourceTypeIsUnknown"></a>
+<h3 class="failures">whenRequestContainsNoHeaderOrUrlThenResourceTypeIsUnknown</h3>
+<span class="code">
+<pre>org.mockito.exceptions.base.MockitoException:
+Mockito cannot mock this class: interface android.webkit.WebResourceRequest.
+
+Mockito can only mock non-private &amp; non-final classes.
+If you're not sure why you're getting this error, please report to the mailing list.
+
+
+
+IMPORTANT INFORMATION FOR ANDROID USERS:
+
+The regular Byte Buddy mock makers cannot generate code on an Android VM!
+To resolve this, please use the 'mockito-android' dependency for your application:
+http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22
+
+Java               : 0.9
+JVM vendor name    : The Android Project
+JVM vendor version : 2.1.0
+JVM name           : Dalvik
+JVM version        : 0.9
+JVM info           : null
+OS name            : Linux
+OS version         : 4.4.124+
+
+
+Underlying exception : java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@cff984e
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.whenRequestContainsNoHeaderOrUrlThenResourceTypeIsUnknown(ResourceTypeTest.kt:112)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:56)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:388)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2145)
+Caused by: java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@cff984e
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting$Dispatcher$ForAndroidPVm.loadDex(AndroidClassLoadingStrategy.java:513)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.doLoad(AndroidClassLoadingStrategy.java:400)
+at net.bytebuddy.android.AndroidClassLoadingStrategy.load(AndroidClassLoadingStrategy.java:127)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.load(AndroidClassLoadingStrategy.java:393)
+at net.bytebuddy.dynamic.TypeResolutionStrategy$Passive.initialize(TypeResolutionStrategy.java:85)
+at net.bytebuddy.dynamic.DynamicType$Default$Unloaded.load(DynamicType.java:5468)
+at org.mockito.internal.creation.bytebuddy.SubclassBytecodeGenerator.mockClass(SubclassBytecodeGenerator.java:129)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:37)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:34)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:137)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:350)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:159)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:361)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator.mockClass(TypeCachingBytecodeGenerator.java:32)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMockType(SubclassByteBuddyMockMaker.java:71)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMock(SubclassByteBuddyMockMaker.java:42)
+at org.mockito.android.internal.creation.AndroidByteBuddyMockMaker.createMock(AndroidByteBuddyMockMaker.java:39)
+at org.mockito.internal.util.MockUtil.createMock(MockUtil.java:35)
+at org.mockito.internal.MockitoCore.mock(MockitoCore.java:69)
+at org.mockito.Mockito.mock(Mockito.java:1895)
+... 28 more
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="whenRequestContainsScriptHeaderThenResourceTypeIsScript"></a>
+<h3 class="failures">whenRequestContainsScriptHeaderThenResourceTypeIsScript</h3>
+<span class="code">
+<pre>org.mockito.exceptions.base.MockitoException:
+Mockito cannot mock this class: interface android.webkit.WebResourceRequest.
+
+Mockito can only mock non-private &amp; non-final classes.
+If you're not sure why you're getting this error, please report to the mailing list.
+
+
+
+IMPORTANT INFORMATION FOR ANDROID USERS:
+
+The regular Byte Buddy mock makers cannot generate code on an Android VM!
+To resolve this, please use the 'mockito-android' dependency for your application:
+http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22
+
+Java               : 0.9
+JVM vendor name    : The Android Project
+JVM vendor version : 2.1.0
+JVM name           : Dalvik
+JVM version        : 0.9
+JVM info           : null
+OS name            : Linux
+OS version         : 4.4.124+
+
+
+Underlying exception : java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@b2df930
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.buildRequestMock(ResourceTypeTest.kt:125)
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.whenRequestContainsScriptHeaderThenResourceTypeIsScript(ResourceTypeTest.kt:68)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:56)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:388)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2145)
+Caused by: java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@b2df930
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting$Dispatcher$ForAndroidPVm.loadDex(AndroidClassLoadingStrategy.java:513)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.doLoad(AndroidClassLoadingStrategy.java:400)
+at net.bytebuddy.android.AndroidClassLoadingStrategy.load(AndroidClassLoadingStrategy.java:127)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.load(AndroidClassLoadingStrategy.java:393)
+at net.bytebuddy.dynamic.TypeResolutionStrategy$Passive.initialize(TypeResolutionStrategy.java:85)
+at net.bytebuddy.dynamic.DynamicType$Default$Unloaded.load(DynamicType.java:5468)
+at org.mockito.internal.creation.bytebuddy.SubclassBytecodeGenerator.mockClass(SubclassBytecodeGenerator.java:129)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:37)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:34)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:137)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:350)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:159)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:361)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator.mockClass(TypeCachingBytecodeGenerator.java:32)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMockType(SubclassByteBuddyMockMaker.java:71)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMock(SubclassByteBuddyMockMaker.java:42)
+at org.mockito.android.internal.creation.AndroidByteBuddyMockMaker.createMock(AndroidByteBuddyMockMaker.java:39)
+at org.mockito.internal.util.MockUtil.createMock(MockUtil.java:35)
+at org.mockito.internal.MockitoCore.mock(MockitoCore.java:69)
+at org.mockito.Mockito.mock(Mockito.java:1895)
+... 29 more
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="whenRequestContainsScriptUrlThenResourceTypeIsScript"></a>
+<h3 class="failures">whenRequestContainsScriptUrlThenResourceTypeIsScript</h3>
+<span class="code">
+<pre>org.mockito.exceptions.base.MockitoException:
+Mockito cannot mock this class: interface android.webkit.WebResourceRequest.
+
+Mockito can only mock non-private &amp; non-final classes.
+If you're not sure why you're getting this error, please report to the mailing list.
+
+
+
+IMPORTANT INFORMATION FOR ANDROID USERS:
+
+The regular Byte Buddy mock makers cannot generate code on an Android VM!
+To resolve this, please use the 'mockito-android' dependency for your application:
+http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22
+
+Java               : 0.9
+JVM vendor name    : The Android Project
+JVM vendor version : 2.1.0
+JVM name           : Dalvik
+JVM version        : 0.9
+JVM info           : null
+OS name            : Linux
+OS version         : 4.4.124+
+
+
+Underlying exception : java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@dd23279
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.buildRequestMock(ResourceTypeTest.kt:125)
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.whenRequestContainsScriptUrlThenResourceTypeIsScript(ResourceTypeTest.kt:74)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:56)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:388)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2145)
+Caused by: java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@dd23279
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting$Dispatcher$ForAndroidPVm.loadDex(AndroidClassLoadingStrategy.java:513)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.doLoad(AndroidClassLoadingStrategy.java:400)
+at net.bytebuddy.android.AndroidClassLoadingStrategy.load(AndroidClassLoadingStrategy.java:127)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.load(AndroidClassLoadingStrategy.java:393)
+at net.bytebuddy.dynamic.TypeResolutionStrategy$Passive.initialize(TypeResolutionStrategy.java:85)
+at net.bytebuddy.dynamic.DynamicType$Default$Unloaded.load(DynamicType.java:5468)
+at org.mockito.internal.creation.bytebuddy.SubclassBytecodeGenerator.mockClass(SubclassBytecodeGenerator.java:129)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:37)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:34)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:137)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:350)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:159)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:361)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator.mockClass(TypeCachingBytecodeGenerator.java:32)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMockType(SubclassByteBuddyMockMaker.java:71)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMock(SubclassByteBuddyMockMaker.java:42)
+at org.mockito.android.internal.creation.AndroidByteBuddyMockMaker.createMock(AndroidByteBuddyMockMaker.java:39)
+at org.mockito.internal.util.MockUtil.createMock(MockUtil.java:35)
+at org.mockito.internal.MockitoCore.mock(MockitoCore.java:69)
+at org.mockito.Mockito.mock(Mockito.java:1895)
+... 29 more
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="whenRequestContainsUnknownHeaderAndUrlThenResourceTypeIsUnknown"></a>
+<h3 class="failures">whenRequestContainsUnknownHeaderAndUrlThenResourceTypeIsUnknown</h3>
+<span class="code">
+<pre>org.mockito.exceptions.base.MockitoException:
+Mockito cannot mock this class: interface android.webkit.WebResourceRequest.
+
+Mockito can only mock non-private &amp; non-final classes.
+If you're not sure why you're getting this error, please report to the mailing list.
+
+
+
+IMPORTANT INFORMATION FOR ANDROID USERS:
+
+The regular Byte Buddy mock makers cannot generate code on an Android VM!
+To resolve this, please use the 'mockito-android' dependency for your application:
+http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22
+
+Java               : 0.9
+JVM vendor name    : The Android Project
+JVM vendor version : 2.1.0
+JVM name           : Dalvik
+JVM version        : 0.9
+JVM info           : null
+OS name            : Linux
+OS version         : 4.4.124+
+
+
+Underlying exception : java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@4fc42bf
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.buildRequestMock(ResourceTypeTest.kt:125)
+at com.duckduckgo.app.trackerdetection.model.ResourceTypeTest.whenRequestContainsUnknownHeaderAndUrlThenResourceTypeIsUnknown(ResourceTypeTest.kt:80)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:56)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:388)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2145)
+Caused by: java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@4fc42bf
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting$Dispatcher$ForAndroidPVm.loadDex(AndroidClassLoadingStrategy.java:513)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.doLoad(AndroidClassLoadingStrategy.java:400)
+at net.bytebuddy.android.AndroidClassLoadingStrategy.load(AndroidClassLoadingStrategy.java:127)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.load(AndroidClassLoadingStrategy.java:393)
+at net.bytebuddy.dynamic.TypeResolutionStrategy$Passive.initialize(TypeResolutionStrategy.java:85)
+at net.bytebuddy.dynamic.DynamicType$Default$Unloaded.load(DynamicType.java:5468)
+at org.mockito.internal.creation.bytebuddy.SubclassBytecodeGenerator.mockClass(SubclassBytecodeGenerator.java:129)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:37)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:34)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:137)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:350)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:159)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:361)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator.mockClass(TypeCachingBytecodeGenerator.java:32)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMockType(SubclassByteBuddyMockMaker.java:71)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMock(SubclassByteBuddyMockMaker.java:42)
+at org.mockito.android.internal.creation.AndroidByteBuddyMockMaker.createMock(AndroidByteBuddyMockMaker.java:39)
+at org.mockito.internal.util.MockUtil.createMock(MockUtil.java:35)
+at org.mockito.internal.MockitoCore.mock(MockitoCore.java:69)
+at org.mockito.Mockito.mock(Mockito.java:1895)
+... 29 more
+</pre>
+</span>
+</div>
+</div>
+<div id="tab1" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Nexus_5X_API_28(AVD) - 9</th>
+</tr>
+</thead>
+<tr>
+<td>whenRequestContainsCssHeaderThenResourceTypeIsCss</td>
+<td class="failures">failed (9.055s)</td>
+</tr>
+<tr>
+<td>whenRequestContainsCssUrlThenResourceTypeIsCss</td>
+<td class="failures">failed (10.013s)</td>
+</tr>
+<tr>
+<td>whenRequestContainsImageHeaderThenResourceTypeIsImage</td>
+<td class="failures">failed (14.578s)</td>
+</tr>
+<tr>
+<td>whenRequestContainsImageUrlThenResourceTypeIsImage</td>
+<td class="failures">failed (9.288s)</td>
+</tr>
+<tr>
+<td>whenRequestContainsNoHeaderOrUrlThenResourceTypeIsUnknown</td>
+<td class="failures">failed (9.105s)</td>
+</tr>
+<tr>
+<td>whenRequestContainsScriptHeaderThenResourceTypeIsScript</td>
+<td class="failures">failed (9.468s)</td>
+</tr>
+<tr>
+<td>whenRequestContainsScriptUrlThenResourceTypeIsScript</td>
+<td class="failures">failed (14.578s)</td>
+</tr>
+<tr>
+<td>whenRequestContainsUnknownHeaderAndUrlThenResourceTypeIsUnknown</td>
+<td class="failures">failed (9.311s)</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="footer">
+<p>Generated by 
+<a href="http://www.gradle.org">Gradle 4.6</a> at Jan 25, 2019 3:06:02 PM</p>
+</div>
+</div>
+</body>

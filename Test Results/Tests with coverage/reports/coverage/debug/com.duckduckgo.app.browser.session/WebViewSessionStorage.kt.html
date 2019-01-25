@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebViewSessionStorage.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser.session</a> &gt; <span class="el_source">WebViewSessionStorage.kt</span></div><h1>WebViewSessionStorage.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser.session
+
+import android.os.Bundle
+import android.os.Parcel
+import android.util.LruCache
+import android.webkit.WebView
+import timber.log.Timber
+
+
+interface WebViewSessionStorage {
+    fun saveSession(webView: WebView?, tabId: String)
+    fun restoreSession(webView: WebView?, tabId: String): Boolean
+    fun deleteSession(tabId: String)
+    fun deleteAllSessions()
+}
+
+<span class="fc" id="L33">class WebViewSessionInMemoryStorage : WebViewSessionStorage {</span>
+
+<span class="fc" id="L35">    private val cache = object : LruCache&lt;String, Bundle&gt;(CACHE_SIZE_BYTES) {</span>
+
+        /**
+         * Size (in bytes) of a single entry in the cache for the given key.
+         * We specify the max cache size in bytes, so we need to calculate an approximate size of the cache entry in bytes.
+         */
+<span class="nc" id="L41">        override fun sizeOf(key: String, bundle: Bundle) = bundle.sizeInBytes()</span>
+
+        override fun entryRemoved(evicted: Boolean, key: String?, oldValue: Bundle?, newValue: Bundle?) {
+<span class="nc bnc" id="L44" title="All 2 branches missed.">            if (evicted) {</span>
+<span class="nc" id="L45">                Timber.v(&quot;Evicted $key from WebView session storage&quot;)</span>
+            }
+<span class="nc" id="L47">        }</span>
+    }
+
+    override fun saveSession(webView: WebView?, tabId: String) {
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (webView == null) {</span>
+<span class="nc" id="L52">            Timber.w(&quot;WebView is null; cannot save session&quot;)</span>
+<span class="nc" id="L53">            return</span>
+        }
+
+<span class="nc" id="L56">        Timber.i(&quot;Saving WebView session for $tabId&quot;)</span>
+
+<span class="nc" id="L58">        val webViewBundle = createWebViewBundle(webView)</span>
+
+<span class="nc" id="L60">        val bundle = Bundle()</span>
+<span class="nc" id="L61">        bundle.putBundle(CACHE_KEY_WEBVIEW, webViewBundle)</span>
+<span class="nc" id="L62">        bundle.putInt(CACHE_KEY_SCROLL_POSITION, webView.scrollY)</span>
+<span class="nc" id="L63">        cache.put(tabId, bundle)</span>
+
+<span class="nc" id="L65">        Timber.d(&quot;Stored ${bundle.sizeInBytes()} bytes for WebView $webView&quot;)</span>
+<span class="nc" id="L66">        logCacheSize()</span>
+<span class="nc" id="L67">    }</span>
+
+    private fun createWebViewBundle(webView: WebView): Bundle {
+<span class="nc" id="L70">        return Bundle().also {</span>
+<span class="nc" id="L71">            webView.saveState(it)</span>
+<span class="nc" id="L72">        }</span>
+    }
+
+    override fun restoreSession(webView: WebView?, tabId: String): Boolean {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (webView == null) {</span>
+<span class="nc" id="L77">            Timber.w(&quot;WebView is null; cannot restore session&quot;)</span>
+<span class="nc" id="L78">            return false</span>
+        }
+
+<span class="nc" id="L81">        Timber.i(&quot;Restoring WebView session for $tabId&quot;)</span>
+
+<span class="nc" id="L83">        val bundle = cache[tabId]</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (bundle == null) {</span>
+<span class="nc" id="L85">            Timber.v(&quot;No saved bundle for tab $tabId&quot;)</span>
+<span class="nc" id="L86">            return false</span>
+        }
+
+<span class="nc" id="L89">        val webViewBundle = bundle.getBundle(CACHE_KEY_WEBVIEW)</span>
+<span class="nc" id="L90">        webView.restoreState(webViewBundle)</span>
+<span class="nc" id="L91">        webView.scrollY = bundle.getInt(CACHE_KEY_SCROLL_POSITION)</span>
+<span class="nc" id="L92">        cache.remove(tabId)</span>
+
+<span class="nc" id="L94">        logCacheSize()</span>
+
+<span class="nc" id="L96">        return true</span>
+    }
+
+    override fun deleteSession(tabId: String) {
+<span class="fc" id="L100">        cache.remove(tabId)</span>
+<span class="fc" id="L101">        Timber.i(&quot;Deleted web session for $tabId&quot;)</span>
+<span class="fc" id="L102">        logCacheSize()</span>
+<span class="fc" id="L103">    }</span>
+
+    override fun deleteAllSessions() {
+<span class="nc" id="L106">        cache.evictAll()</span>
+<span class="nc" id="L107">        logCacheSize()</span>
+<span class="nc" id="L108">    }</span>
+
+    private fun logCacheSize() {
+<span class="fc" id="L111">        Timber.v(&quot;Cache size is now ~${cache.size()} bytes out of a max size of ${cache.maxSize()} bytes&quot;)</span>
+<span class="fc" id="L112">    }</span>
+
+    private fun Bundle.sizeInBytes(): Int {
+<span class="nc" id="L115">        val parcel = Parcel.obtain()</span>
+<span class="nc" id="L116">        parcel.writeValue(this)</span>
+
+<span class="nc" id="L118">        val bytes = parcel.marshall()</span>
+<span class="nc" id="L119">        parcel.recycle()</span>
+
+<span class="nc" id="L121">        return bytes.size</span>
+    }
+
+<span class="fc" id="L124">    companion object {</span>
+        private const val CACHE_SIZE_BYTES = 10 * 1024 * 1024 // 10 MiB
+
+        private const val CACHE_KEY_WEBVIEW = &quot;webview&quot;
+        private const val CACHE_KEY_SCROLL_POSITION = &quot;scroll-position&quot;
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

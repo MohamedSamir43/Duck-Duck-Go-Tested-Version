@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SurveyActivity.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.feedback.ui</a> &gt; <span class="el_source">SurveyActivity.kt</span></div><h1>SurveyActivity.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.feedback.ui
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.webkit.*
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Observer
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.feedback.model.Survey
+import com.duckduckgo.app.feedback.ui.SurveyViewModel.Command
+import com.duckduckgo.app.feedback.ui.SurveyViewModel.Command.Close
+import com.duckduckgo.app.feedback.ui.SurveyViewModel.Command.LoadSurvey
+import com.duckduckgo.app.global.DuckDuckGoActivity
+import com.duckduckgo.app.global.view.gone
+import com.duckduckgo.app.global.view.show
+import com.duckduckgo.app.statistics.pixels.Pixel
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelName.SURVEY_SURVEY_DISMISSED
+import kotlinx.android.synthetic.main.activity_user_survey.*
+import javax.inject.Inject
+
+
+<span class="nc" id="L40">class SurveyActivity : DuckDuckGoActivity() {</span>
+
+<span class="nc" id="L42">    private val viewModel: SurveyViewModel by bindViewModel()</span>
+
+    @Inject
+<span class="nc bnc" id="L45" title="All 2 branches missed.">    lateinit var pixel: Pixel</span>
+
+    @SuppressLint(&quot;SetJavaScriptEnabled&quot;)
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L49">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L50">        setContentView(R.layout.activity_user_survey)</span>
+<span class="nc" id="L51">        configureListeners()</span>
+
+<span class="nc" id="L53">        webView.settings.javaScriptEnabled = true</span>
+<span class="nc" id="L54">        webView.setBackgroundColor(ContextCompat.getColor(this, R.color.cornflowerBlue))</span>
+<span class="nc" id="L55">        webView.webViewClient = SurveyWebViewClient()</span>
+
+<span class="nc" id="L57">        configureObservers()</span>
+
+<span class="nc" id="L59">        val lastCommand = viewModel.command.value</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (lastCommand != null) {</span>
+<span class="nc" id="L61">            processCommand(lastCommand)</span>
+        } else {
+<span class="nc" id="L63">            consumeIntentExtra()</span>
+        }
+<span class="nc" id="L65">    }</span>
+
+    private fun consumeIntentExtra() {
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        val survey = intent.getSerializableExtra(SURVEY_EXTRA) as Survey</span>
+<span class="nc" id="L69">        viewModel.start(survey)</span>
+<span class="nc" id="L70">    }</span>
+
+    private fun configureListeners() {
+<span class="nc" id="L73">        dismissButton.setOnClickListener {</span>
+<span class="nc" id="L74">            onSurveyDismissed()</span>
+<span class="nc" id="L75">        }</span>
+<span class="nc" id="L76">    }</span>
+
+    private fun configureObservers() {
+<span class="nc" id="L79">        viewModel.command.observe(this, Observer {</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            it?.let { command -&gt; processCommand(command) }</span>
+<span class="nc" id="L81">        })</span>
+<span class="nc" id="L82">    }</span>
+
+    private fun processCommand(command: Command) {
+<span class="nc" id="L85">        when (command) {</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            is LoadSurvey -&gt; loadSurvey(command.url)</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">            is Command.ShowSurvey -&gt; {</span>
+<span class="nc" id="L88">                showSurvey()</span>
+            }
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            is Command.ShowError -&gt; {</span>
+<span class="nc" id="L91">                showError()</span>
+            }
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            is Close -&gt; finish()</span>
+        }
+<span class="nc" id="L95">    }</span>
+
+    private fun loadSurvey(url: String) {
+<span class="nc" id="L98">        progress.show()</span>
+<span class="nc" id="L99">        webView.loadUrl(url)</span>
+<span class="nc" id="L100">    }</span>
+
+    private fun showSurvey() {
+<span class="nc" id="L103">        progress.gone()</span>
+<span class="nc" id="L104">        webView.show()</span>
+<span class="nc" id="L105">    }</span>
+
+    private fun showError() {
+<span class="nc" id="L108">        progress.gone()</span>
+<span class="nc" id="L109">        webView.gone()</span>
+<span class="nc" id="L110">        errorView.show()</span>
+<span class="nc" id="L111">    }</span>
+
+    override fun onSaveInstanceState(outState: Bundle) {
+<span class="nc" id="L114">        webView.saveState(outState)</span>
+<span class="nc" id="L115">        super.onSaveInstanceState(outState)</span>
+<span class="nc" id="L116">    }</span>
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+<span class="nc" id="L119">        super.onRestoreInstanceState(savedInstanceState)</span>
+<span class="nc" id="L120">        webView.restoreState(savedInstanceState)</span>
+<span class="nc" id="L121">    }</span>
+
+    override fun onBackPressed() {
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (webView.canGoBack()) {</span>
+<span class="nc" id="L125">            webView.goBack()</span>
+        } else {
+<span class="nc" id="L127">            onSurveyDismissed()</span>
+        }
+<span class="nc" id="L129">    }</span>
+
+    private fun onSurveyDismissed() {
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        pixel.fire(SURVEY_SURVEY_DISMISSED)</span>
+<span class="nc" id="L133">        viewModel.onSurveyDismissed()</span>
+<span class="nc" id="L134">    }</span>
+
+<span class="nc" id="L136">    companion object {</span>
+
+        fun intent(context: Context, survey: Survey): Intent {
+<span class="nc" id="L139">            val intent = Intent(context, SurveyActivity::class.java)</span>
+<span class="nc" id="L140">            intent.putExtra(SURVEY_EXTRA, survey)</span>
+<span class="nc" id="L141">            return intent</span>
+        }
+
+        const val SURVEY_EXTRA = &quot;SURVEY_EXTRA&quot;
+    }
+
+<span class="nc" id="L147">    inner class SurveyWebViewClient : WebViewClient() {</span>
+
+        override fun onPageFinished(view: WebView?, url: String?) {
+<span class="nc" id="L150">            super.onPageFinished(view, url)</span>
+<span class="nc" id="L151">            viewModel.onSurveyLoaded()</span>
+<span class="nc" id="L152">        }</span>
+
+        override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
+<span class="nc bnc" id="L155" title="All 4 branches missed.">            if (request.isForMainFrame &amp;&amp; request.url.host == &quot;www.duckduckgo.com&quot;) {</span>
+<span class="nc" id="L156">                runOnUiThread {</span>
+<span class="nc" id="L157">                    viewModel.onSurveyCompleted()</span>
+<span class="nc" id="L158">                }</span>
+            }
+<span class="nc" id="L160">            return null</span>
+        }
+
+        @Suppress(&quot;OverridingDeprecatedMember&quot;)
+        override fun onReceivedError(view: WebView, errorCode: Int, description: String, failingUrl: String) {
+<span class="nc" id="L165">            viewModel.onSurveyFailedToLoad()</span>
+<span class="nc" id="L166">        }</span>
+
+        override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            if (request.isForMainFrame) {</span>
+<span class="nc" id="L170">                viewModel.onSurveyFailedToLoad()</span>
+            }
+<span class="nc" id="L172">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

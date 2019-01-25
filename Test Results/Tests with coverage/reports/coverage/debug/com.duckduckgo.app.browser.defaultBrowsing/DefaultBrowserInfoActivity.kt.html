@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultBrowserInfoActivity.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser.defaultBrowsing</a> &gt; <span class="el_source">DefaultBrowserInfoActivity.kt</span></div><h1>DefaultBrowserInfoActivity.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser.defaultBrowsing
+
+import android.annotation.TargetApi
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.Bundle
+import android.provider.Settings
+import androidx.annotation.RequiresApi
+import android.widget.Toast
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.global.DuckDuckGoActivity
+import com.duckduckgo.app.statistics.pixels.Pixel
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelName.*
+import kotlinx.android.synthetic.main.activity_default_browser_info.*
+import timber.log.Timber
+import javax.inject.Inject
+
+<span class="nc" id="L36">class DefaultBrowserInfoActivity : DuckDuckGoActivity() {</span>
+
+    @Inject
+<span class="nc bnc" id="L39" title="All 2 branches missed.">    lateinit var defaultBrowserDetector: DefaultBrowserDetector</span>
+
+    @Inject
+<span class="nc bnc" id="L42" title="All 2 branches missed.">    lateinit var pixel: Pixel</span>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L45">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L46">        setContentView(R.layout.activity_default_browser_info)</span>
+<span class="nc" id="L47">        configureUiEventHandlers()</span>
+
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (savedInstanceState == null) {</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            pixel.fire(DEFAULT_BROWSER_INFO_VIEWED)</span>
+        }
+<span class="nc" id="L52">    }</span>
+
+    @TargetApi(Build.VERSION_CODES.N)
+    private fun configureUiEventHandlers() {
+<span class="nc" id="L56">        dismissButton.setOnClickListener { exitActivity() }</span>
+<span class="nc" id="L57">        launchSettingsButton.setOnClickListener { launchDefaultAppActivityForResult() }</span>
+<span class="nc" id="L58">        defaultBrowserIllustration.setOnClickListener { launchDefaultAppActivityForResult() }</span>
+<span class="nc" id="L59">    }</span>
+
+    @RequiresApi(Build.VERSION_CODES.N)
+    private fun launchDefaultAppActivityForResult() {
+<span class="nc" id="L63">        try {</span>
+<span class="nc" id="L64">            val intent = Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS)</span>
+<span class="nc" id="L65">            startActivityForResult(intent, DEFAULT_BROWSER_REQUEST_CODE)</span>
+<span class="nc" id="L66">        } catch (e: ActivityNotFoundException) {</span>
+<span class="nc" id="L67">            val errorMessage = getString(R.string.cannotLaunchDefaultAppSettings)</span>
+<span class="nc" id="L68">            Timber.w(e, errorMessage)</span>
+<span class="nc" id="L69">            Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT).show()</span>
+        }
+<span class="nc" id="L71">    }</span>
+
+    override fun onResume() {
+<span class="nc" id="L74">        super.onResume()</span>
+
+<span class="nc bnc" id="L76" title="All 4 branches missed.">        if (defaultBrowserDetector.isCurrentlyConfiguredAsDefaultBrowser()) {</span>
+<span class="nc" id="L77">            finish()</span>
+        }
+<span class="nc" id="L79">    }</span>
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        when (requestCode) {</span>
+            DEFAULT_BROWSER_REQUEST_CODE -&gt; {
+<span class="nc" id="L84">                fireDefaultBrowserPixel()</span>
+            }
+<span class="nc" id="L86">            else -&gt; super.onActivityResult(requestCode, resultCode, data)</span>
+        }
+<span class="nc" id="L88">    }</span>
+
+    private fun fireDefaultBrowserPixel() {
+<span class="nc bnc" id="L91" title="All 4 branches missed.">        if (defaultBrowserDetector.isCurrentlyConfiguredAsDefaultBrowser()) {</span>
+<span class="nc" id="L92">            Timber.i(&quot;User returned from default settings; DDG is now the default&quot;)</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            pixel.fire(DEFAULT_BROWSER_SET)</span>
+        } else {
+<span class="nc" id="L95">            Timber.i(&quot;User returned from default settings; DDG was not set default&quot;)</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            pixel.fire(DEFAULT_BROWSER_NOT_SET)</span>
+        }
+<span class="nc" id="L98">    }</span>
+
+    override fun onBackPressed() {
+<span class="nc" id="L101">        exitActivity()</span>
+<span class="nc" id="L102">    }</span>
+
+    private fun exitActivity() {
+<span class="nc" id="L105">        launchSettingsButton.text = &quot;&quot;</span>
+<span class="nc" id="L106">        finishAfterTransition()</span>
+<span class="nc" id="L107">    }</span>
+
+<span class="nc" id="L109">    companion object {</span>
+
+        private const val DEFAULT_BROWSER_REQUEST_CODE = 100
+
+        fun intent(context: Context): Intent {
+<span class="nc" id="L114">            return Intent(context, DefaultBrowserInfoActivity::class.java)</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

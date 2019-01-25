@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TrackerNetworksAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.privacy.ui</a> &gt; <span class="el_source">TrackerNetworksAdapter.kt</span></div><h1>TrackerNetworksAdapter.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.privacy.ui
+
+import android.net.Uri
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.RecyclerView
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.global.baseHost
+import com.duckduckgo.app.privacy.renderer.TrackersRenderer
+import com.duckduckgo.app.trackerdetection.model.TrackingEvent
+import kotlinx.android.synthetic.main.item_tracker_network_element.view.*
+import kotlinx.android.synthetic.main.item_tracker_network_header.view.*
+
+
+<span class="fc" id="L35">class TrackerNetworksAdapter : RecyclerView.Adapter&lt;RecyclerView.ViewHolder&gt;() {</span>
+
+<span class="fc" id="L37">    companion object {</span>
+        const val HEADER = 0
+        const val ROW = 1
+    }
+
+    interface ViewData
+<span class="pc" id="L43">    data class Header(val networkName: String) : ViewData</span>
+<span class="pc" id="L44">    data class Row(val tracker: TrackingEvent) : ViewData</span>
+
+<span class="nc" id="L46">    class HeaderViewHolder(</span>
+<span class="nc" id="L47">        val root: View,</span>
+<span class="nc" id="L48">        val network: TextView,</span>
+<span class="nc" id="L49">        val icon: ImageView</span>
+<span class="nc" id="L50">    ) : RecyclerView.ViewHolder(root)</span>
+
+<span class="nc" id="L52">    class RowViewHolder(</span>
+<span class="nc" id="L53">        val root: View,</span>
+<span class="nc" id="L54">        val host: TextView,</span>
+<span class="nc" id="L55">        val category: TextView</span>
+<span class="nc" id="L56">    ) : RecyclerView.ViewHolder(root)</span>
+
+<span class="fc" id="L58">    private var viewData: List&lt;ViewData&gt; = ArrayList()</span>
+<span class="fc" id="L59">    private var networkRenderer: TrackersRenderer = TrackersRenderer()</span>
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        return when (viewType) {</span>
+            HEADER -&gt; {
+<span class="nc" id="L64">                val root = LayoutInflater.from(parent.context).inflate(R.layout.item_tracker_network_header, parent, false)</span>
+<span class="nc" id="L65">                HeaderViewHolder(root, root.network, root.icon)</span>
+            }
+            else -&gt; {
+<span class="nc" id="L68">                val root = LayoutInflater.from(parent.context).inflate(R.layout.item_tracker_network_element, parent, false)</span>
+<span class="nc" id="L69">                RowViewHolder(root, root.host, root.category)</span>
+            }
+        }
+    }
+
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+<span class="nc" id="L75">        val viewElement = viewData[position]</span>
+<span class="nc bnc" id="L76" title="All 4 branches missed.">        if (holder is HeaderViewHolder &amp;&amp; viewElement is Header) {</span>
+<span class="nc" id="L77">            onBindHeader(holder, viewElement)</span>
+<span class="nc bnc" id="L78" title="All 4 branches missed.">        } else if (holder is RowViewHolder &amp;&amp; viewElement is Row) {</span>
+<span class="nc" id="L79">            onBindRow(holder, viewElement)</span>
+        }
+<span class="nc" id="L81">    }</span>
+
+    private fun onBindRow(holder: RowViewHolder, viewElement: Row) {
+<span class="nc" id="L84">        holder.host.text = Uri.parse(viewElement.tracker.trackerUrl).baseHost</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        holder.category.text = viewElement.tracker.trackerNetwork?.category</span>
+<span class="nc" id="L86">    }</span>
+
+    private fun onBindHeader(holder: HeaderViewHolder, viewElement: Header) {
+<span class="nc" id="L89">        val iconResource = networkRenderer.networkLogoIcon(holder.icon.context, viewElement.networkName)</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (iconResource != null) {</span>
+<span class="nc" id="L91">            holder.icon.setImageResource(iconResource)</span>
+        }
+<span class="nc" id="L93">        holder.network.text = viewElement.networkName</span>
+<span class="nc" id="L94">    }</span>
+
+    override fun getItemCount(): Int {
+<span class="fc" id="L97">        return viewData.size</span>
+    }
+
+    override fun getItemViewType(position: Int): Int {
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        return if (viewData[position] is Header) HEADER else ROW</span>
+    }
+
+    fun updateData(data: Map&lt;String, List&lt;TrackingEvent&gt;&gt;) {
+<span class="pc bpc" id="L105" title="5 of 10 branches missed.">        val majorNetworkKeys = data.map { if (it.value.find { it.trackerNetwork?.isMajor == true } != null) it.key else null }.filterNotNull()</span>
+<span class="pc bpc" id="L106" title="2 of 4 branches missed.">        val otherKeys = data.keys.filter { !majorNetworkKeys.contains(it) }.sorted()</span>
+
+<span class="fc" id="L108">        val oldViewData = viewData</span>
+<span class="fc" id="L109">        val newViewData = generateViewData(majorNetworkKeys, data) + generateViewData(otherKeys, data)</span>
+<span class="fc" id="L110">        val diffCallback = DiffCallback(oldViewData, newViewData)</span>
+<span class="fc" id="L111">        val diffResult = DiffUtil.calculateDiff(diffCallback)</span>
+
+<span class="fc" id="L113">        viewData = newViewData</span>
+<span class="fc" id="L114">        diffResult.dispatchUpdatesTo(this)</span>
+<span class="fc" id="L115">    }</span>
+
+    private fun generateViewData(keys: List&lt;String&gt;, data: Map&lt;String, List&lt;TrackingEvent&gt;&gt;): List&lt;ViewData&gt; {
+<span class="fc" id="L118">        val viewData = ArrayList&lt;ViewData&gt;().toMutableList()</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        for (key: String in keys) {</span>
+<span class="fc" id="L120">            viewData.add(Header(key))</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">            data[key]!!.mapTo(viewData) { Row(it) }</span>
+        }
+<span class="fc" id="L123">        return viewData</span>
+    }
+
+<span class="fc" id="L126">    class DiffCallback(private val old: List&lt;ViewData&gt;, private val new: List&lt;ViewData&gt;) : DiffUtil.Callback() {</span>
+
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+<span class="nc" id="L129">            return old[oldItemPosition] == new[newItemPosition]</span>
+        }
+
+        override fun getOldListSize(): Int {
+<span class="fc" id="L133">            return old.size</span>
+        }
+
+        override fun getNewListSize(): Int {
+<span class="fc" id="L137">            return new.size</span>
+        }
+
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+<span class="nc" id="L141">            return old[oldItemPosition] == new[newItemPosition]</span>
+        }
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

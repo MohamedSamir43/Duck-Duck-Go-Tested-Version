@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BrowserWebViewClient.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser</a> &gt; <span class="el_source">BrowserWebViewClient.kt</span></div><h1>BrowserWebViewClient.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser
+
+import android.annotation.TargetApi
+import android.graphics.Bitmap
+import android.net.Uri
+import android.net.http.SslError
+import android.os.Build
+import androidx.annotation.AnyThread
+import androidx.annotation.UiThread
+import androidx.annotation.WorkerThread
+import android.webkit.*
+import androidx.core.net.toUri
+import com.duckduckgo.app.global.isHttps
+import com.duckduckgo.app.httpsupgrade.HttpsUpgrader
+import com.duckduckgo.app.statistics.pixels.Pixel
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelName.HTTPS_UPGRADE_SITE_ERROR
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelParameter.APP_VERSION
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelParameter.ERROR_CODE
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelParameter.URL
+import com.duckduckgo.app.statistics.store.StatisticsDataStore
+import timber.log.Timber
+import javax.inject.Inject
+import kotlin.concurrent.thread
+
+
+<span class="fc" id="L42">class BrowserWebViewClient @Inject constructor(</span>
+    private val requestRewriter: RequestRewriter,
+    private val specialUrlDetector: SpecialUrlDetector,
+    private val requestInterceptor: RequestInterceptor,
+    private val httpsUpgrader: HttpsUpgrader,
+    private val statisticsDataStore: StatisticsDataStore,
+    private val pixel: Pixel
+<span class="fc" id="L49">) : WebViewClient() {</span>
+
+<span class="pc" id="L51">    var webViewClientListener: WebViewClientListener? = null</span>
+
+    private var currentUrl: String? = null
+
+    /**
+     * This is the new method of url overriding available from API 24 onwards
+     */
+    override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+<span class="nc" id="L59">        val url = request.url</span>
+<span class="nc" id="L60">        return shouldOverride(view, url)</span>
+    }
+
+    /**
+     * * This is the old, deprecated method of url overriding available until API 23
+     */
+    @Suppress(&quot;OverridingDeprecatedMember&quot;)
+    override fun shouldOverrideUrlLoading(view: WebView, urlString: String): Boolean {
+<span class="nc" id="L68">        val url = Uri.parse(urlString)</span>
+<span class="nc" id="L69">        return shouldOverride(view, url)</span>
+    }
+
+    /**
+     * API-agnostic implementation of deciding whether to override url or not
+     */
+    private fun shouldOverride(webView: WebView, url: Uri): Boolean {
+<span class="nc" id="L76">        Timber.v(&quot;shouldOverride $url&quot;)</span>
+
+<span class="nc" id="L78">        val urlType = specialUrlDetector.determineType(url)</span>
+
+<span class="nc" id="L80">        return when (urlType) {</span>
+<span class="nc bnc" id="L81" title="All 4 branches missed.">            is SpecialUrlDetector.UrlType.Email -&gt; consume { webViewClientListener?.sendEmailRequested(urlType.emailAddress) }</span>
+<span class="nc bnc" id="L82" title="All 4 branches missed.">            is SpecialUrlDetector.UrlType.Telephone -&gt; consume { webViewClientListener?.dialTelephoneNumberRequested(urlType.telephoneNumber) }</span>
+<span class="nc bnc" id="L83" title="All 4 branches missed.">            is SpecialUrlDetector.UrlType.Sms -&gt; consume { webViewClientListener?.sendSmsRequested(urlType.telephoneNumber) }</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            is SpecialUrlDetector.UrlType.IntentType -&gt; consume {</span>
+<span class="nc" id="L85">                Timber.i(&quot;Found intent type link for $urlType.url&quot;)</span>
+<span class="nc" id="L86">                launchExternalApp(urlType)</span>
+<span class="nc" id="L87">            }</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            is SpecialUrlDetector.UrlType.Unknown -&gt; {</span>
+<span class="nc" id="L89">                Timber.w(&quot;Unable to process link type for ${urlType.url}&quot;)</span>
+<span class="nc" id="L90">                webView.loadUrl(webView.originalUrl)</span>
+<span class="nc" id="L91">                return false</span>
+            }
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            is SpecialUrlDetector.UrlType.SearchQuery -&gt; return false</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            is SpecialUrlDetector.UrlType.Web -&gt; {</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                if (requestRewriter.shouldRewriteRequest(url)) {</span>
+<span class="nc" id="L96">                    val newUri = requestRewriter.rewriteRequestWithCustomQueryParams(url)</span>
+<span class="nc" id="L97">                    webView.loadUrl(newUri.toString())</span>
+<span class="nc" id="L98">                    return true</span>
+                }
+<span class="nc" id="L100">                return false</span>
+            }
+        }
+    }
+
+    private fun launchExternalApp(urlType: SpecialUrlDetector.UrlType.IntentType) {
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        webViewClientListener?.externalAppLinkClicked(urlType)</span>
+<span class="nc" id="L107">    }</span>
+
+    override fun onPageStarted(webView: WebView, url: String?, favicon: Bitmap?) {
+<span class="fc" id="L110">        Timber.d(&quot;\nonPageStarted {\nurl: $url\nwebView.url: ${webView.url}\n}\n&quot;)</span>
+
+<span class="fc" id="L112">        currentUrl = url</span>
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        webViewClientListener?.let {</span>
+<span class="fc" id="L114">            it.loadingStarted()</span>
+<span class="fc" id="L115">            it.navigationOptionsChanged(determineNavigationOptions(webView))</span>
+<span class="fc" id="L116">        }</span>
+
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        val uri = if (currentUrl != null) Uri.parse(currentUrl) else null</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">        if (uri != null) {</span>
+<span class="fc" id="L120">            reportHttpsIfInUpgradeList(uri)</span>
+        }
+<span class="fc" id="L122">    }</span>
+
+    override fun onPageFinished(webView: WebView, url: String?) {
+<span class="fc" id="L125">        Timber.d(&quot;onPageFinished $url&quot;)</span>
+
+<span class="fc" id="L127">        currentUrl = url</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        webViewClientListener?.let {</span>
+<span class="fc" id="L129">            it.loadingFinished(url)</span>
+<span class="fc" id="L130">            it.urlChanged(url)</span>
+<span class="fc" id="L131">            it.navigationOptionsChanged(determineNavigationOptions(webView))</span>
+<span class="fc" id="L132">        }</span>
+<span class="fc" id="L133">    }</span>
+
+    @WorkerThread
+    override fun shouldInterceptRequest(webView: WebView, request: WebResourceRequest): WebResourceResponse? {
+<span class="nc" id="L137">        Timber.v(&quot;Intercepting resource ${request.url} on page $currentUrl&quot;)</span>
+<span class="nc" id="L138">        return requestInterceptor.shouldIntercept(request, webView, currentUrl, webViewClientListener)</span>
+    }
+
+    @UiThread
+    @Suppress(&quot;OverridingDeprecatedMember&quot;)
+    override fun onReceivedError(view: WebView, errorCode: Int, description: String, failingUrl: String) {
+<span class="nc bnc" id="L144" title="All 2 branches missed.">        if (Build.VERSION.SDK_INT &lt; Build.VERSION_CODES.M) {</span>
+<span class="nc" id="L145">            val url = failingUrl.toUri()</span>
+<span class="nc" id="L146">            reportHttpsErrorIfInUpgradeList(url, error = &quot;WEB_RESOURCE_ERROR_$errorCode&quot;)</span>
+        }
+<span class="nc" id="L148">        super.onReceivedError(view, errorCode, description, failingUrl)</span>
+<span class="nc" id="L149">    }</span>
+
+    @UiThread
+    @TargetApi(Build.VERSION_CODES.M)
+    override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        if (request.isForMainFrame) {</span>
+<span class="nc" id="L155">            reportHttpsErrorIfInUpgradeList(request.url, error = &quot;WEB_RESOURCE_ERROR_${error.errorCode}&quot;)</span>
+        }
+<span class="nc" id="L157">        super.onReceivedError(view, request, error)</span>
+<span class="nc" id="L158">    }</span>
+
+    @UiThread
+    override fun onReceivedSslError(view: WebView, handler: SslErrorHandler, error: SslError) {
+<span class="nc" id="L162">        val uri = error.url.toUri()</span>
+<span class="nc" id="L163">        val isMainFrameRequest = currentUrl == uri.toString()</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">        if (isMainFrameRequest) {</span>
+<span class="nc" id="L165">            reportHttpsErrorIfInUpgradeList(uri, &quot;SSL_ERROR_${error.primaryError}&quot;)</span>
+        }
+<span class="nc" id="L167">        super.onReceivedSslError(view, handler, error)</span>
+<span class="nc" id="L168">    }</span>
+
+    @AnyThread
+    private fun reportHttpsErrorIfInUpgradeList(url: Uri, error: String?) {
+<span class="nc bnc" id="L172" title="All 2 branches missed.">        if (!url.isHttps) return</span>
+<span class="nc" id="L173">        thread {</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">            if (httpsUpgrader.isInUpgradeList(url)) {</span>
+<span class="nc" id="L175">                reportHttpsUpgradeSiteError(url, error)</span>
+<span class="nc" id="L176">                statisticsDataStore.httpsUpgradesFailures += 1</span>
+            }
+<span class="nc" id="L178">        }</span>
+<span class="nc" id="L179">    }</span>
+
+    @AnyThread
+    private fun reportHttpsIfInUpgradeList(url: Uri) {
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        if (!url.isHttps) return</span>
+<span class="nc" id="L184">        thread {</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            if (httpsUpgrader.isInUpgradeList(url)) {</span>
+<span class="nc" id="L186">                statisticsDataStore.httpsUpgradesTotal += 1</span>
+            }
+<span class="nc" id="L188">        }</span>
+<span class="nc" id="L189">    }</span>
+
+    private fun reportHttpsUpgradeSiteError(url: Uri, error: String?) {
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        val host = url.host ?: return</span>
+<span class="nc" id="L193">        val params = mapOf(</span>
+<span class="nc" id="L194">            APP_VERSION to BuildConfig.VERSION_NAME,</span>
+<span class="nc" id="L195">            URL to &quot;https://$host&quot;,</span>
+<span class="nc" id="L196">            ERROR_CODE to error</span>
+        )
+<span class="nc" id="L198">        pixel.fire(HTTPS_UPGRADE_SITE_ERROR, params)</span>
+<span class="nc" id="L199">    }</span>
+
+    /**
+     * Utility to function to execute a function, and then return true
+     *
+     * Useful to reduce clutter in repeatedly including `return true` after doing the real work.
+     */
+    private inline fun consume(function: () -&gt; Unit): Boolean {
+<span class="nc" id="L207">        function()</span>
+<span class="nc" id="L208">        return true</span>
+    }
+
+    private fun determineNavigationOptions(webView: WebView): BrowserNavigationOptions {
+<span class="fc" id="L212">        val canGoBack = webView.canGoBack()</span>
+<span class="fc" id="L213">        val canGoForward = webView.canGoForward()</span>
+<span class="fc" id="L214">        return BrowserNavigationOptions(canGoBack, canGoForward)</span>
+    }
+
+<span class="pc" id="L217">    data class BrowserNavigationOptions(val canGoBack: Boolean, val canGoForward: Boolean)</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

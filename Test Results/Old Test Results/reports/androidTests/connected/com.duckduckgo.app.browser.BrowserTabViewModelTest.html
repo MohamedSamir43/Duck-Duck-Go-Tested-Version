@@ -1,0 +1,621 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>Test results - Class com.duckduckgo.app.browser.BrowserTabViewModelTest</title>
+<link href="css/base-style.css" rel="stylesheet" type="text/css"/>
+<link href="css/style.css" rel="stylesheet" type="text/css"/>
+<script src="js/report.js" type="text/javascript"></script>
+</head>
+<body>
+<div id="content">
+<h1>Class com.duckduckgo.app.browser.BrowserTabViewModelTest</h1>
+<div class="breadcrumbs">
+<a href="index.html">all</a> &gt; 
+<a href="com.duckduckgo.app.browser.html">com.duckduckgo.app.browser</a> &gt; BrowserTabViewModelTest</div>
+<div id="summary">
+<table>
+<tr>
+<td>
+<div class="summaryGroup">
+<table>
+<tr>
+<td>
+<div class="infoBox" id="tests">
+<div class="counter">91</div>
+<p>tests</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="failures">
+<div class="counter">2</div>
+<p>failures</p>
+</div>
+</td>
+<td>
+<div class="infoBox" id="duration">
+<div class="counter">4m55.44s</div>
+<p>duration</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+</td>
+<td>
+<div class="infoBox failures" id="successRate">
+<div class="percent">97%</div>
+<p>successful</p>
+</div>
+</td>
+</tr>
+</table>
+</div>
+<div id="tabs">
+<ul class="tabLinks">
+<li>
+<a href="#tab0">Failed tests</a>
+</li>
+<li>
+<a href="#tab1">Tests</a>
+</li>
+</ul>
+<div id="tab0" class="tab">
+<h2>Failed tests</h2>
+<div class="test">
+<a name="whenUserSelectsDownloadImageOptionFromContextMenuThenDownloadFileCommandIssued"></a>
+<h3 class="failures">whenUserSelectsDownloadImageOptionFromContextMenuThenDownloadFileCommandIssued</h3>
+<span class="code">
+<pre>org.mockito.exceptions.base.MockitoException:
+Mockito cannot mock this class: interface android.view.MenuItem.
+
+Mockito can only mock non-private &amp; non-final classes.
+If you're not sure why you're getting this error, please report to the mailing list.
+
+
+
+IMPORTANT INFORMATION FOR ANDROID USERS:
+
+The regular Byte Buddy mock makers cannot generate code on an Android VM!
+To resolve this, please use the 'mockito-android' dependency for your application:
+http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22
+
+Java               : 0.9
+JVM vendor name    : The Android Project
+JVM vendor version : 2.1.0
+JVM name           : Dalvik
+JVM version        : 0.9
+JVM info           : null
+OS name            : Linux
+OS version         : 4.4.124+
+
+
+Underlying exception : java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@2adcd0f
+at com.duckduckgo.app.browser.BrowserTabViewModelTest.whenUserSelectsDownloadImageOptionFromContextMenuThenDownloadFileCommandIssued(BrowserTabViewModelTest.kt:849)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at androidx.test.internal.runner.junit4.statement.RunBefores.evaluate(RunBefores.java:80)
+at androidx.test.internal.runner.junit4.statement.RunAfters.evaluate(RunAfters.java:61)
+at org.junit.rules.TestWatcher$1.evaluate(TestWatcher.java:55)
+at com.duckduckgo.app.InstantSchedulersRule$apply$1.evaluate(InstantSchedulersRule.kt:45)
+at org.junit.rules.RunRules.evaluate(RunRules.java:20)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:56)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:388)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2145)
+Caused by: java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@2adcd0f
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting$Dispatcher$ForAndroidPVm.loadDex(AndroidClassLoadingStrategy.java:513)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.doLoad(AndroidClassLoadingStrategy.java:400)
+at net.bytebuddy.android.AndroidClassLoadingStrategy.load(AndroidClassLoadingStrategy.java:127)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.load(AndroidClassLoadingStrategy.java:393)
+at net.bytebuddy.dynamic.TypeResolutionStrategy$Passive.initialize(TypeResolutionStrategy.java:85)
+at net.bytebuddy.dynamic.DynamicType$Default$Unloaded.load(DynamicType.java:5468)
+at org.mockito.internal.creation.bytebuddy.SubclassBytecodeGenerator.mockClass(SubclassBytecodeGenerator.java:129)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:37)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:34)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:137)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:350)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:159)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:361)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator.mockClass(TypeCachingBytecodeGenerator.java:32)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMockType(SubclassByteBuddyMockMaker.java:71)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMock(SubclassByteBuddyMockMaker.java:42)
+at org.mockito.android.internal.creation.AndroidByteBuddyMockMaker.createMock(AndroidByteBuddyMockMaker.java:39)
+at org.mockito.internal.util.MockUtil.createMock(MockUtil.java:35)
+at org.mockito.internal.MockitoCore.mock(MockitoCore.java:69)
+at org.mockito.Mockito.mock(Mockito.java:1895)
+... 33 more
+</pre>
+</span>
+</div>
+<div class="test">
+<a name="whenUserSelectsOpenTabThenTabCommandSent"></a>
+<h3 class="failures">whenUserSelectsOpenTabThenTabCommandSent</h3>
+<span class="code">
+<pre>org.mockito.exceptions.base.MockitoException:
+Mockito cannot mock this class: interface android.view.MenuItem.
+
+Mockito can only mock non-private &amp; non-final classes.
+If you're not sure why you're getting this error, please report to the mailing list.
+
+
+
+IMPORTANT INFORMATION FOR ANDROID USERS:
+
+The regular Byte Buddy mock makers cannot generate code on an Android VM!
+To resolve this, please use the 'mockito-android' dependency for your application:
+http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22mockito-android%22%20g%3A%22org.mockito%22
+
+Java               : 0.9
+JVM vendor name    : The Android Project
+JVM vendor version : 2.1.0
+JVM name           : Dalvik
+JVM version        : 0.9
+JVM info           : null
+OS name            : Linux
+OS version         : 4.4.124+
+
+
+Underlying exception : java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@17a7f37
+at com.duckduckgo.app.browser.BrowserTabViewModelTest.whenUserSelectsOpenTabThenTabCommandSent(BrowserTabViewModelTest.kt:866)
+at java.lang.reflect.Method.invoke(Native Method)
+at org.junit.runners.model.FrameworkMethod$1.runReflectiveCall(FrameworkMethod.java:50)
+at org.junit.internal.runners.model.ReflectiveCallable.run(ReflectiveCallable.java:12)
+at org.junit.runners.model.FrameworkMethod.invokeExplosively(FrameworkMethod.java:47)
+at org.junit.internal.runners.statements.InvokeMethod.evaluate(InvokeMethod.java:17)
+at androidx.test.internal.runner.junit4.statement.RunBefores.evaluate(RunBefores.java:80)
+at androidx.test.internal.runner.junit4.statement.RunAfters.evaluate(RunAfters.java:61)
+at org.junit.rules.TestWatcher$1.evaluate(TestWatcher.java:55)
+at com.duckduckgo.app.InstantSchedulersRule$apply$1.evaluate(InstantSchedulersRule.kt:45)
+at org.junit.rules.RunRules.evaluate(RunRules.java:20)
+at org.junit.runners.ParentRunner.runLeaf(ParentRunner.java:325)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:78)
+at org.junit.runners.BlockJUnit4ClassRunner.runChild(BlockJUnit4ClassRunner.java:57)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runners.Suite.runChild(Suite.java:128)
+at org.junit.runners.Suite.runChild(Suite.java:27)
+at org.junit.runners.ParentRunner$3.run(ParentRunner.java:290)
+at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:71)
+at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:288)
+at org.junit.runners.ParentRunner.access$000(ParentRunner.java:58)
+at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:268)
+at org.junit.runners.ParentRunner.run(ParentRunner.java:363)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:137)
+at org.junit.runner.JUnitCore.run(JUnitCore.java:115)
+at androidx.test.internal.runner.TestExecutor.execute(TestExecutor.java:56)
+at androidx.test.runner.AndroidJUnitRunner.onStart(AndroidJUnitRunner.java:388)
+at android.app.Instrumentation$InstrumentationThread.run(Instrumentation.java:2145)
+Caused by: java.lang.IllegalArgumentException: On Android P, a class injection can only be applied to BaseDexClassLoader: net.bytebuddy.dynamic.loading.MultipleParentClassLoader@17a7f37
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting$Dispatcher$ForAndroidPVm.loadDex(AndroidClassLoadingStrategy.java:513)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.doLoad(AndroidClassLoadingStrategy.java:400)
+at net.bytebuddy.android.AndroidClassLoadingStrategy.load(AndroidClassLoadingStrategy.java:127)
+at net.bytebuddy.android.AndroidClassLoadingStrategy$Injecting.load(AndroidClassLoadingStrategy.java:393)
+at net.bytebuddy.dynamic.TypeResolutionStrategy$Passive.initialize(TypeResolutionStrategy.java:85)
+at net.bytebuddy.dynamic.DynamicType$Default$Unloaded.load(DynamicType.java:5468)
+at org.mockito.internal.creation.bytebuddy.SubclassBytecodeGenerator.mockClass(SubclassBytecodeGenerator.java:129)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:37)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator$1.call(TypeCachingBytecodeGenerator.java:34)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:137)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:350)
+at net.bytebuddy.TypeCache.findOrInsert(TypeCache.java:159)
+at net.bytebuddy.TypeCache$WithInlineExpunction.findOrInsert(TypeCache.java:361)
+at org.mockito.internal.creation.bytebuddy.TypeCachingBytecodeGenerator.mockClass(TypeCachingBytecodeGenerator.java:32)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMockType(SubclassByteBuddyMockMaker.java:71)
+at org.mockito.internal.creation.bytebuddy.SubclassByteBuddyMockMaker.createMock(SubclassByteBuddyMockMaker.java:42)
+at org.mockito.android.internal.creation.AndroidByteBuddyMockMaker.createMock(AndroidByteBuddyMockMaker.java:39)
+at org.mockito.internal.util.MockUtil.createMock(MockUtil.java:35)
+at org.mockito.internal.MockitoCore.mock(MockitoCore.java:69)
+at org.mockito.Mockito.mock(Mockito.java:1895)
+... 33 more
+</pre>
+</span>
+</div>
+</div>
+<div id="tab1" class="tab">
+<h2>Tests</h2>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Nexus_5X_API_28(AVD) - 9</th>
+</tr>
+</thead>
+<tr>
+<td>whenBlankInputQueryThenNoQueryMadeAvailableToActivity</td>
+<td class="success">passed (0.571s)</td>
+</tr>
+<tr>
+<td>whenBookmarkAddedThenDaoIsUpdatedAndUserNotified</td>
+<td class="success">passed (0.674s)</td>
+</tr>
+<tr>
+<td>whenEmptyInputQueryThenNoQueryMadeAvailableToActivity</td>
+<td class="success">passed (0.568s)</td>
+</tr>
+<tr>
+<td>whenEnoughTrackersDetectedThenPrivacyGradeIsUpdated</td>
+<td class="success">passed (0.854s)</td>
+</tr>
+<tr>
+<td>whenEnteringEmptyQueryThenHideKeyboardCommandNotIssued</td>
+<td class="success">passed (0.570s)</td>
+</tr>
+<tr>
+<td>whenEnteringEmptyQueryWithAutoCompleteDisabledThenAutoCompleteSuggestionsNotShown</td>
+<td class="success">passed (0.632s)</td>
+</tr>
+<tr>
+<td>whenEnteringEmptyQueryWithAutoCompleteEnabledThenAutoCompleteSuggestionsNotShown</td>
+<td class="success">passed (0.571s)</td>
+</tr>
+<tr>
+<td>whenEnteringNonEmptyQueryThenHideKeyboardCommandIssued</td>
+<td class="success">passed (0.700s)</td>
+</tr>
+<tr>
+<td>whenEnteringQueryWithAutoCompleteDisabledThenAutoCompleteSuggestionsNotShown</td>
+<td class="success">passed (0.674s)</td>
+</tr>
+<tr>
+<td>whenEnteringQueryWithAutoCompleteEnabledThenAutoCompleteSuggestionsShown</td>
+<td class="success">passed (1.012s)</td>
+</tr>
+<tr>
+<td>whenInitialisedThenFireButtonIsShown</td>
+<td class="success">passed (0.544s)</td>
+</tr>
+<tr>
+<td>whenInitialisedThenMenuButtonIsShown</td>
+<td class="success">passed (0.628s)</td>
+</tr>
+<tr>
+<td>whenInitialisedThenPrivacyGradeIsNotShown</td>
+<td class="success">passed (0.596s)</td>
+</tr>
+<tr>
+<td>whenInitialisedThenTabsButtonIsShown</td>
+<td class="success">passed (0.518s)</td>
+</tr>
+<tr>
+<td>whenLoadingFinishedWithNoUrlThenOmnibarTextUpdatedToMatch</td>
+<td class="success">passed (0.622s)</td>
+</tr>
+<tr>
+<td>whenLoadingFinishedWithNoUrlThenSiteVisitedEntryNotAddedToLeaderboardDao</td>
+<td class="success">passed (1.066s)</td>
+</tr>
+<tr>
+<td>whenLoadingFinishedWithQueryUrlThenOmnibarTextUpdatedToShowQuery</td>
+<td class="success">passed (0.673s)</td>
+</tr>
+<tr>
+<td>whenLoadingFinishedWithUrlThenOmnibarTextUpdatedToMatch</td>
+<td class="success">passed (0.623s)</td>
+</tr>
+<tr>
+<td>whenLoadingFinishedWithUrlThenSiteVisitedEntryAddedToLeaderboardDao</td>
+<td class="success">passed (0.674s)</td>
+</tr>
+<tr>
+<td>whenLoadingStartedThenPrivacyGradeIsCleared</td>
+<td class="success">passed (0.804s)</td>
+</tr>
+<tr>
+<td>whenNoOmnibarTextEverEnteredThenViewStateHasEmptyString</td>
+<td class="success">passed (0.648s)</td>
+</tr>
+<tr>
+<td>whenNoSiteAndBrokenSiteSelectedThenBrokenSiteFeedbackCommandSentWithoutUrl</td>
+<td class="success">passed (0.700s)</td>
+</tr>
+<tr>
+<td>whenNoUrlThenAddBookmarkButtonDisabled</td>
+<td class="success">passed (0.571s)</td>
+</tr>
+<tr>
+<td>whenNonEmptyInputThenQueryMadeAvailableToActivity</td>
+<td class="success">passed (0.622s)</td>
+</tr>
+<tr>
+<td>whenNonSearchUrlSharedThenUrlIsUnchanged</td>
+<td class="success">passed (0.673s)</td>
+</tr>
+<tr>
+<td>whenNotifiedEnteringFullScreenThenEnterFullScreenCommandIssued</td>
+<td class="success">passed (0.596s)</td>
+</tr>
+<tr>
+<td>whenNotifiedEnteringFullScreenThenViewStateUpdatedWithFullScreenFlag</td>
+<td class="success">passed (0.544s)</td>
+</tr>
+<tr>
+<td>whenNotifiedLeavingFullScreenThenViewStateUpdatedWithFullScreenFlagDisabled</td>
+<td class="success">passed (0.650s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputDoesNotHaveFocusAndAppConfigDownloadedAndBrowserShownThenPrivacyGradeIsShown</td>
+<td class="success">passed (0.673s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputDoesNotHaveFocusAndAppConfigDownloadedButBrowserNotShownThenPrivacyGradeIsHidden</td>
+<td class="success">passed (0.622s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputDoesNotHaveFocusAndAppConfigNotDownloadedThenPrivacyGradeIsNotShown</td>
+<td class="success">passed (0.648s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputDoesNotHaveFocusAndHasQueryThenFireButtonIsShown</td>
+<td class="success">passed (7.075s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputDoesNotHaveFocusAndHasQueryThenMenuButtonIsShown</td>
+<td class="success">passed (0.596s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputDoesNotHaveFocusAndHasQueryThenTabsButtonIsShown</td>
+<td class="success">passed (0.624s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputDoesNotHaveFocusOrQueryThenFireButtonIsShown</td>
+<td class="success">passed (0.571s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputDoesNotHaveFocusOrQueryThenMenuButtonIsShown</td>
+<td class="success">passed (0.596s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputDoesNotHaveFocusOrQueryThenTabsButtonIsShown</td>
+<td class="success">passed (0.569s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputHasFocusAndNoQueryThenFireButtonIsShown</td>
+<td class="success">passed (0.621s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputHasFocusAndNoQueryThenMenuButtonIsShown</td>
+<td class="success">passed (0.544s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputHasFocusAndNoQueryThenTabsButtonIsShown</td>
+<td class="success">passed (0.623s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputHasFocusAndQueryThenFireButtonIsHidden</td>
+<td class="success">passed (0.570s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputHasFocusAndQueryThenMenuButtonIsHidden</td>
+<td class="success">passed (0.596s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputHasFocusAndQueryThenTabsButtonIsHidden</td>
+<td class="success">passed (0.621s)</td>
+</tr>
+<tr>
+<td>whenOmnibarInputHasFocusThenPrivacyGradeIsNotShown</td>
+<td class="success">passed (0.544s)</td>
+</tr>
+<tr>
+<td>whenOnSiteAndBrokenSiteSelectedThenBrokenSiteFeedbackCommandSentWithUrl</td>
+<td class="success">passed (0.756s)</td>
+</tr>
+<tr>
+<td>whenOpenInNewBackgroundRequestedThenTabRepositoryUpdatedAndCommandIssued</td>
+<td class="success">passed (0.674s)</td>
+</tr>
+<tr>
+<td>whenRestoringWebViewSessionNotRestorableAndNoPreviousUrlThenNoUrlLoaded</td>
+<td class="success">passed (0.571s)</td>
+</tr>
+<tr>
+<td>whenRestoringWebViewSessionNotRestorableThenPreviousUrlLoaded</td>
+<td class="success">passed (0.700s)</td>
+</tr>
+<tr>
+<td>whenScheduledSurveyChangesAndNewSurveyInstallationDayMatchesDaysInstalledThenHasValidSurveyIsTrue</td>
+<td class="success">passed (0.596s)</td>
+</tr>
+<tr>
+<td>whenScheduledSurveyChangesAndNewSurveyInstallationDoesNotMatchDaysInstalledThenHasValidSurveyIsFalse</td>
+<td class="success">passed (0.678s)</td>
+</tr>
+<tr>
+<td>whenScheduledSurveyIsNullThenHasValidSurveyIsFalse</td>
+<td class="success">passed (0.753s)</td>
+</tr>
+<tr>
+<td>whenSearchUrlSharedThenAtbAndSourceParametersAreRemoved</td>
+<td class="success">passed (0.855s)</td>
+</tr>
+<tr>
+<td>whenSubmittedQueryHasWhitespaceItIsTrimmed</td>
+<td class="success">passed (0.830s)</td>
+</tr>
+<tr>
+<td>whenSurveyExistsAndUserOpensSurveyThenSurveyShown</td>
+<td class="success">passed (0.571s)</td>
+</tr>
+<tr>
+<td>whenTrackerDetectedThenNetworkLeaderboardUpdated</td>
+<td class="success">passed (0.777s)</td>
+</tr>
+<tr>
+<td>whenTrackerDetectedThenSiteVisitedEntryAddedToLeaderboardDao</td>
+<td class="success">passed (0.596s)</td>
+</tr>
+<tr>
+<td>whenUrlChangedThenPrivacyGradeIsReset</td>
+<td class="success">passed (0.622s)</td>
+</tr>
+<tr>
+<td>whenUrlChangedThenViewStateIsUpdated</td>
+<td class="success">passed (0.596s)</td>
+</tr>
+<tr>
+<td>whenUrlChangedWithDuckDuckGoUrlContainingQueryThenAtbRefreshed</td>
+<td class="success">passed (0.648s)</td>
+</tr>
+<tr>
+<td>whenUrlChangedWithDuckDuckGoUrlContainingQueryThenUrlRewrittenToContainQuery</td>
+<td class="success">passed (0.622s)</td>
+</tr>
+<tr>
+<td>whenUrlChangedWithDuckDuckGoUrlNotContainingQueryThenFullUrlShown</td>
+<td class="success">passed (0.701s)</td>
+</tr>
+<tr>
+<td>whenUrlChangedWithNonDuckDuckGoUrlThenFullUrlShown</td>
+<td class="success">passed (0.700s)</td>
+</tr>
+<tr>
+<td>whenUrlPresentThenAddBookmarkButtonEnabled</td>
+<td class="success">passed (0.622s)</td>
+</tr>
+<tr>
+<td>whenUrlUpdatedAfterConfigDownloadThenPrivacyGradeIsShown</td>
+<td class="success">passed (0.700s)</td>
+</tr>
+<tr>
+<td>whenUrlUpdatedBeforeConfigDownloadThenPrivacyGradeIsShown</td>
+<td class="success">passed (0.698s)</td>
+</tr>
+<tr>
+<td>whenUserDismissesFindInPageThenViewStateUpdatedToClearSearchTerm</td>
+<td class="success">passed (0.570s)</td>
+</tr>
+<tr>
+<td>whenUserDismissesFindInPageThenViewStateUpdatedToDenoteUserIsNotFindingInPage</td>
+<td class="success">passed (0.570s)</td>
+</tr>
+<tr>
+<td>whenUserDismissesSurveyThenSurveyCancelledAndHasValidSurveyIsFalse</td>
+<td class="success">passed (0.647s)</td>
+</tr>
+<tr>
+<td>whenUserSelectsDesktopSiteThenDesktopModeStateUpdated</td>
+<td class="success">passed (0.596s)</td>
+</tr>
+<tr>
+<td>whenUserSelectsDesktopSiteWhenNotOnMobileSpecificSiteThenUrlNotModified</td>
+<td class="success">passed (0.599s)</td>
+</tr>
+<tr>
+<td>whenUserSelectsDesktopSiteWhenOnMobileSpecificSiteThenUrlModified</td>
+<td class="success">passed (0.622s)</td>
+</tr>
+<tr>
+<td>whenUserSelectsDownloadImageOptionFromContextMenuThenDownloadFileCommandIssued</td>
+<td class="failures">failed (53.497s)</td>
+</tr>
+<tr>
+<td>whenUserSelectsMobileSiteThenMobileModeStateUpdated</td>
+<td class="success">passed (0.570s)</td>
+</tr>
+<tr>
+<td>whenUserSelectsMobileSiteWhenNotOnMobileSpecificSiteThenUrlNotModified</td>
+<td class="success">passed (0.545s)</td>
+</tr>
+<tr>
+<td>whenUserSelectsMobileSiteWhenOnMobileSpecificSiteThenUrlNotModified</td>
+<td class="success">passed (0.596s)</td>
+</tr>
+<tr>
+<td>whenUserSelectsOpenTabThenTabCommandSent</td>
+<td class="failures">failed (56.684s)</td>
+</tr>
+<tr>
+<td>whenUserSelectsToShareLinkThenShareLinkCommandSent</td>
+<td class="success">passed (0.648s)</td>
+</tr>
+<tr>
+<td>whenUserSelectsToShareLinkWithNullUrlThenShareLinkCommandNotSent</td>
+<td class="success">passed (0.519s)</td>
+</tr>
+<tr>
+<td>whenUserTypesSearchTermThenViewStateUpdatedToContainSearchTerm</td>
+<td class="success">passed (0.647s)</td>
+</tr>
+<tr>
+<td>whenUserTypesSearchTermThenViewStateUpdatedToDenoteUserIsFindingInPage</td>
+<td class="success">passed (0.545s)</td>
+</tr>
+<tr>
+<td>whenViewBecomesVisibleWithActiveSiteThenKeyboardHidden</td>
+<td class="success">passed (0.598s)</td>
+</tr>
+<tr>
+<td>whenViewBecomesVisibleWithoutActiveSiteThenKeyboardShown</td>
+<td class="success">passed (2m2.45s)</td>
+</tr>
+<tr>
+<td>whenViewModelGetsProgressUpdateThenViewStateIsUpdated</td>
+<td class="success">passed (0.649s)</td>
+</tr>
+<tr>
+<td>whenViewModelInitialisedThenFullScreenFlagIsDisabled</td>
+<td class="success">passed (0.577s)</td>
+</tr>
+<tr>
+<td>whenViewModelNotifiedThatUrlGotFocusThenViewStateIsUpdated</td>
+<td class="success">passed (0.544s)</td>
+</tr>
+<tr>
+<td>whenViewModelNotifiedThatUrlLostFocusThenViewStateIsUpdated</td>
+<td class="success">passed (0.571s)</td>
+</tr>
+<tr>
+<td>whenViewModelNotifiedThatWebViewHasFinishedLoadingThenViewStateIsUpdated</td>
+<td class="success">passed (0.622s)</td>
+</tr>
+<tr>
+<td>whenViewModelNotifiedThatWebViewIsLoadingThenViewStateIsUpdated</td>
+<td class="success">passed (0.700s)</td>
+</tr>
+<tr>
+<td>whenWebSessionRestoredThenGlobalLayoutSwitchedToShowingBrowser</td>
+<td class="success">passed (0.544s)</td>
+</tr>
+<tr>
+<td>whenWebViewSessionIsToBeSavedThenUnderlyingSessionStoredCalled</td>
+<td class="success">passed (0.647s)</td>
+</tr>
+<tr>
+<td>whenWebViewSessionRestorableThenSessionRestored</td>
+<td class="success">passed (0.751s)</td>
+</tr>
+</table>
+</div>
+</div>
+<div id="footer">
+<p>Generated by 
+<a href="http://www.gradle.org">Gradle 4.6</a> at Jan 25, 2019 3:06:01 PM</p>
+</div>
+</div>
+</body>

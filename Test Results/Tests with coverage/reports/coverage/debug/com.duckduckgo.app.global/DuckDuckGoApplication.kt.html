@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DuckDuckGoApplication.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.global</a> &gt; <span class="el_source">DuckDuckGoApplication.kt</span></div><h1>DuckDuckGoApplication.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.global
+
+import android.app.Activity
+import android.app.Application
+import android.app.Service
+import android.os.Build
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleObserver
+import androidx.lifecycle.OnLifecycleEvent
+import androidx.lifecycle.ProcessLifecycleOwner
+import com.duckduckgo.app.browser.BuildConfig
+import com.duckduckgo.app.di.AppComponent
+import com.duckduckgo.app.di.DaggerAppComponent
+import com.duckduckgo.app.fire.FireActivity
+import com.duckduckgo.app.fire.UnsentForgetAllPixelStore
+import com.duckduckgo.app.global.Theming.initializeTheme
+import com.duckduckgo.app.global.install.AppInstallStore
+import com.duckduckgo.app.global.notification.NotificationRegistrar
+import com.duckduckgo.app.global.shortcut.AppShortcutCreator
+import com.duckduckgo.app.httpsupgrade.HttpsUpgrader
+import com.duckduckgo.app.job.AppConfigurationSyncer
+import com.duckduckgo.app.migration.LegacyMigration
+import com.duckduckgo.app.settings.db.SettingsDataStore
+import com.duckduckgo.app.statistics.api.StatisticsUpdater
+import com.duckduckgo.app.statistics.pixels.Pixel
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelName.APP_LAUNCH
+import com.duckduckgo.app.surrogates.ResourceSurrogateLoader
+import com.duckduckgo.app.trackerdetection.TrackerDataLoader
+import com.squareup.leakcanary.LeakCanary
+import dagger.android.AndroidInjector
+import dagger.android.DispatchingAndroidInjector
+import dagger.android.HasActivityInjector
+import dagger.android.HasServiceInjector
+import dagger.android.support.HasSupportFragmentInjector
+import io.reactivex.schedulers.Schedulers
+import org.jetbrains.anko.doAsync
+import timber.log.Timber
+import javax.inject.Inject
+import kotlin.concurrent.thread
+
+<span class="fc" id="L58">open class DuckDuckGoApplication : HasActivityInjector, HasServiceInjector, HasSupportFragmentInjector, Application(), LifecycleObserver {</span>
+
+    @Inject
+<span class="nc bnc" id="L61" title="All 2 branches missed.">    lateinit var activityInjector: DispatchingAndroidInjector&lt;Activity&gt;</span>
+
+    @Inject
+<span class="nc bnc" id="L64" title="All 2 branches missed.">    lateinit var supportFragmentInjector: DispatchingAndroidInjector&lt;Fragment&gt;</span>
+
+    @Inject
+<span class="nc bnc" id="L67" title="All 2 branches missed.">    lateinit var serviceInjector: DispatchingAndroidInjector&lt;Service&gt;</span>
+
+    @Inject
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">    lateinit var trackerDataLoader: TrackerDataLoader</span>
+
+    @Inject
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">    lateinit var resourceSurrogateLoader: ResourceSurrogateLoader</span>
+
+    @Inject
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">    lateinit var appConfigurationSyncer: AppConfigurationSyncer</span>
+
+    @Inject
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">    lateinit var migration: LegacyMigration</span>
+
+    @Inject
+<span class="nc bnc" id="L82" title="All 2 branches missed.">    lateinit var statisticsUpdater: StatisticsUpdater</span>
+
+    @Inject
+<span class="nc bnc" id="L85" title="All 2 branches missed.">    lateinit var appInstallStore: AppInstallStore</span>
+
+    @Inject
+<span class="nc bnc" id="L88" title="All 2 branches missed.">    lateinit var settingsDataStore: SettingsDataStore</span>
+
+    @Inject
+<span class="nc bnc" id="L91" title="All 2 branches missed.">    lateinit var notificationRegistrar: NotificationRegistrar</span>
+    
+    @Inject
+<span class="nc bnc" id="L94" title="All 2 branches missed.">    lateinit var pixel: Pixel</span>
+
+    @Inject
+<span class="nc bnc" id="L97" title="All 2 branches missed.">    lateinit var appShortcutCreator: AppShortcutCreator</span>
+
+    @Inject
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">    lateinit var httpsUpgrader: HttpsUpgrader</span>
+
+    @Inject
+<span class="nc bnc" id="L103" title="All 2 branches missed.">    lateinit var unsentForgetAllPixelStore: UnsentForgetAllPixelStore</span>
+
+    private var launchedByFireAction: Boolean = false
+
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">    open lateinit var daggerAppComponent: AppComponent</span>
+
+    override fun onCreate() {
+<span class="fc" id="L110">        super.onCreate()</span>
+
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">        if (!installLeakCanary()) return</span>
+
+<span class="fc" id="L114">        configureLogging()</span>
+<span class="fc" id="L115">        configureDependencyInjection()</span>
+
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (appIsRestarting()) return</span>
+
+<span class="fc" id="L119">        ProcessLifecycleOwner.get().lifecycle.addObserver(this)</span>
+
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N_MR1) {</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">            appShortcutCreator.configureAppShortcuts(this)</span>
+        }
+
+<span class="fc" id="L125">        recordInstallationTimestamp()</span>
+<span class="fc" id="L126">        initializeStatistics()</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        initializeTheme(settingsDataStore)</span>
+<span class="fc" id="L128">        loadTrackerData()</span>
+<span class="fc" id="L129">        configureDataDownloader()</span>
+
+<span class="fc" id="L131">        migrateLegacyDb()</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        notificationRegistrar.registerApp()</span>
+
+<span class="fc" id="L134">        initializeHttpsUpgrader()</span>
+<span class="fc" id="L135">        submitUnsentFirePixels()</span>
+<span class="fc" id="L136">    }</span>
+
+    private fun recordInstallationTimestamp() {
+<span class="pc bpc" id="L139" title="2 of 4 branches missed.">        if (!appInstallStore.hasInstallTimestampRecorded()) {</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">            appInstallStore.installTimestamp = System.currentTimeMillis()</span>
+        }
+<span class="fc" id="L142">    }</span>
+
+    protected open fun installLeakCanary(): Boolean {
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        if (LeakCanary.isInAnalyzerProcess(this)) {</span>
+<span class="nc" id="L146">            return false</span>
+        }
+<span class="nc" id="L148">        LeakCanary.install(this)</span>
+<span class="nc" id="L149">        return true</span>
+    }
+
+    private fun appIsRestarting(): Boolean {
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">        if (FireActivity.appRestarting(this)) {</span>
+<span class="nc" id="L154">            Timber.i(&quot;App restarting&quot;)</span>
+<span class="nc" id="L155">            return true</span>
+        }
+<span class="fc" id="L157">        return false</span>
+    }
+
+    private fun migrateLegacyDb() {
+<span class="fc" id="L161">        doAsync {</span>
+<span class="fc" id="L162">            migration.start { favourites, searches -&gt;</span>
+<span class="fc" id="L163">                Timber.d(&quot;Migrated $favourites favourites, $searches&quot;)</span>
+<span class="fc" id="L164">            }</span>
+<span class="fc" id="L165">        }</span>
+<span class="fc" id="L166">    }</span>
+
+    private fun loadTrackerData() {
+<span class="fc" id="L169">        doAsync {</span>
+<span class="fc" id="L170">            trackerDataLoader.loadData()</span>
+<span class="fc" id="L171">            resourceSurrogateLoader.loadData()</span>
+<span class="fc" id="L172">        }</span>
+<span class="fc" id="L173">    }</span>
+
+    private fun configureLogging() {
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">        if (BuildConfig.DEBUG) Timber.plant(Timber.DebugTree())</span>
+<span class="fc" id="L177">    }</span>
+
+    protected open fun configureDependencyInjection() {
+<span class="nc" id="L180">        daggerAppComponent = DaggerAppComponent.builder()</span>
+<span class="nc" id="L181">            .application(this)</span>
+<span class="nc" id="L182">            .build()</span>
+<span class="nc" id="L183">        daggerAppComponent.inject(this)</span>
+<span class="nc" id="L184">    }</span>
+
+    private fun initializeStatistics() {
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        statisticsUpdater.initializeAtb()</span>
+<span class="fc" id="L188">    }</span>
+
+    private fun initializeHttpsUpgrader() {
+<span class="fc" id="L191">        thread { httpsUpgrader.reloadData() }</span>
+<span class="fc" id="L192">    }</span>
+
+    private fun submitUnsentFirePixels() {
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">        val count = unsentForgetAllPixelStore.pendingPixelCountClearData</span>
+<span class="fc" id="L196">        Timber.i(&quot;Found $count unsent clear data pixels&quot;)</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">        if (count &gt; 0) {</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">            val timeDifferenceMillis = System.currentTimeMillis() - unsentForgetAllPixelStore.lastClearTimestamp</span>
+<span class="nc bnc" id="L199" title="All 2 branches missed.">            if (timeDifferenceMillis &lt;= APP_RESTART_CAUSED_BY_FIRE_GRACE_PERIOD) {</span>
+<span class="nc" id="L200">                Timber.i(&quot;The app was re-launched as a result of the fire action being triggered (happened ${timeDifferenceMillis}ms ago)&quot;)</span>
+<span class="nc" id="L201">                launchedByFireAction = true</span>
+            }
+<span class="nc bnc" id="L203" title="All 4 branches missed.">            for (i in 1..count) {</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">                pixel.fire(Pixel.PixelName.FORGET_ALL_EXECUTED)</span>
+            }
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            unsentForgetAllPixelStore.resetCount()</span>
+        }
+<span class="fc" id="L208">    }</span>
+
+    /**
+     * Immediately syncs data. Upon completion (successful or error),
+     * it will schedule a recurring job to keep the data in sync.
+     *
+     * We only process data if it has changed so these calls are inexpensive.
+     */
+    private fun configureDataDownloader() {
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">        appConfigurationSyncer.scheduleImmediateSync()</span>
+<span class="fc" id="L218">            .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L219">            .doAfterTerminate({</span>
+<span class="fc" id="L220">                appConfigurationSyncer.scheduleRegularSync(this)</span>
+<span class="fc" id="L221">            })</span>
+<span class="pc" id="L222">            .subscribe({}, { Timber.w(&quot;Failed to download initial app configuration ${it.localizedMessage}&quot;) })</span>
+<span class="fc" id="L223">    }</span>
+
+<span class="nc bnc" id="L225" title="All 2 branches missed.">    override fun activityInjector(): AndroidInjector&lt;Activity&gt; = activityInjector</span>
+
+<span class="nc bnc" id="L227" title="All 2 branches missed.">    override fun supportFragmentInjector(): AndroidInjector&lt;Fragment&gt; = supportFragmentInjector</span>
+
+<span class="nc bnc" id="L229" title="All 2 branches missed.">    override fun serviceInjector(): AndroidInjector&lt;Service&gt; = serviceInjector</span>
+
+    @OnLifecycleEvent(Lifecycle.Event.ON_START)
+    fun onAppForegrounded() {
+<span class="nc bnc" id="L233" title="All 2 branches missed.">        if (launchedByFireAction) {</span>
+<span class="nc" id="L234">            launchedByFireAction = false</span>
+<span class="nc" id="L235">            Timber.i(&quot;Suppressing app launch pixel&quot;)</span>
+<span class="nc" id="L236">            return</span>
+        }
+<span class="nc bnc" id="L238" title="All 2 branches missed.">        pixel.fire(APP_LAUNCH)</span>
+<span class="nc" id="L239">    }</span>
+
+<span class="fc" id="L241">    companion object {</span>
+        private const val APP_RESTART_CAUSED_BY_FIRE_GRACE_PERIOD: Long = 10_000L
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LegacyMigration.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.migration</a> &gt; <span class="el_source">LegacyMigration.kt</span></div><h1>LegacyMigration.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.migration
+
+import android.content.Context
+import androidx.annotation.WorkerThread
+import com.duckduckgo.app.bookmarks.db.BookmarkEntity
+import com.duckduckgo.app.bookmarks.db.BookmarksDao
+import com.duckduckgo.app.browser.omnibar.QueryUrlConverter
+import com.duckduckgo.app.global.db.AppDatabase
+import com.duckduckgo.app.migration.legacy.LegacyDb
+import com.duckduckgo.app.migration.legacy.LegacyDbContracts
+import timber.log.Timber
+import javax.inject.Inject
+
+<span class="fc" id="L30">class LegacyMigration @Inject constructor(</span>
+<span class="nc" id="L31">    val database: AppDatabase,</span>
+<span class="nc" id="L32">    val bookmarksDao: BookmarksDao,</span>
+<span class="nc" id="L33">    val context: Context,</span>
+<span class="nc" id="L34">    val queryUrlConverter: QueryUrlConverter</span>
+) {
+
+    @WorkerThread
+    fun start(completion: (favourites: Int, searches: Int) -&gt; Unit) {
+
+<span class="pc" id="L40">        LegacyDb(context.applicationContext).use {</span>
+<span class="fc" id="L41">            migrate(it, completion)</span>
+<span class="fc" id="L42">        }</span>
+
+<span class="fc" id="L44">    }</span>
+
+    private fun migrate(legacyDb: LegacyDb, completion: (favourites: Int, searches: Int) -&gt; Unit) {
+
+<span class="fc" id="L48">        var favourites = 0</span>
+<span class="fc" id="L49">        var searches = 0</span>
+
+<span class="fc" id="L51">        database.runInTransaction {</span>
+<span class="fc" id="L52">            favourites = migrateFavourites(legacyDb)</span>
+<span class="fc" id="L53">            searches = migrateSavedSearches(legacyDb)</span>
+<span class="fc" id="L54">            legacyDb.deleteAll()</span>
+<span class="fc" id="L55">        }</span>
+
+<span class="fc" id="L57">        completion(favourites, searches)</span>
+<span class="fc" id="L58">    }</span>
+
+    private fun migrateSavedSearches(db: LegacyDb): Int {
+
+<span class="fc" id="L62">        var count = 0</span>
+<span class="pc" id="L63">        db.cursorSavedSearch.use {</span>
+
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            if (!it.moveToFirst()) {</span>
+<span class="fc" id="L66">                Timber.d(&quot;No saved searches found&quot;)</span>
+<span class="fc" id="L67">                return 0</span>
+            }
+
+<span class="fc" id="L70">            val titleColumn = it.getColumnIndex(LegacyDbContracts.SAVED_SEARCH_TABLE.COLUMN_TITLE)</span>
+<span class="fc" id="L71">            val queryColumn = it.getColumnIndex(LegacyDbContracts.SAVED_SEARCH_TABLE.COLUMN_QUERY)</span>
+
+            do {
+
+<span class="fc" id="L75">                val title = it.getString(titleColumn)</span>
+<span class="fc" id="L76">                val query = it.getString(queryColumn)</span>
+
+<span class="fc" id="L78">                val url = queryUrlConverter.convertQueryToUrl(query)</span>
+
+<span class="fc" id="L80">                bookmarksDao.insert(BookmarkEntity(title = title, url = url))</span>
+
+<span class="fc" id="L82">                count += 1</span>
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">            } while (it.moveToNext())</span>
+<span class="fc" id="L84">        }</span>
+
+<span class="fc" id="L86">        return count</span>
+    }
+
+    private fun migrateFavourites(db: LegacyDb): Int {
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        val feedObjects = db.selectAll() ?: return 0</span>
+
+<span class="fc" id="L92">        var count = 0</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        for (feedObject in feedObjects) {</span>
+
+<span class="fc bfc" id="L95" title="All 2 branches covered.">            if (!db.isSaved(feedObject.id)) {</span>
+<span class="fc" id="L96">                continue</span>
+            }
+
+<span class="fc" id="L99">            val title = feedObject.title</span>
+<span class="fc" id="L100">            val url = feedObject.url</span>
+
+<span class="fc" id="L102">            bookmarksDao.insert(BookmarkEntity(title = title, url = url))</span>
+
+<span class="fc" id="L104">            count += 1</span>
+        }
+
+<span class="fc" id="L107">        return count</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

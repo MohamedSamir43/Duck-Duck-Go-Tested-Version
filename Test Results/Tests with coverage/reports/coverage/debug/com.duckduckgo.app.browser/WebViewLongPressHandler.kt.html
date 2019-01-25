@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebViewLongPressHandler.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser</a> &gt; <span class="el_source">WebViewLongPressHandler.kt</span></div><h1>WebViewLongPressHandler.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser
+
+import android.content.Context
+import android.view.ContextMenu
+import android.view.MenuItem
+import android.webkit.URLUtil
+import android.webkit.WebView
+import com.duckduckgo.app.browser.LongPressHandler.RequiredAction
+import com.duckduckgo.app.browser.LongPressHandler.RequiredAction.*
+import com.duckduckgo.app.statistics.pixels.Pixel
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelName.*
+import timber.log.Timber
+import javax.inject.Inject
+
+
+interface LongPressHandler {
+    fun handleLongPress(longPressTargetType: Int, longPressTargetUrl: String?, menu: ContextMenu)
+    fun userSelectedMenuItem(longPressTarget: String, item: MenuItem): RequiredAction
+
+<span class="nc" id="L36">    sealed class RequiredAction {</span>
+<span class="nc" id="L37">        object None : RequiredAction()</span>
+<span class="nc" id="L38">        class OpenInNewTab(val url: String) : RequiredAction()</span>
+<span class="nc" id="L39">        class OpenInNewBackgroundTab(val url: String) : RequiredAction()</span>
+<span class="nc" id="L40">        class DownloadFile(val url: String) : RequiredAction()</span>
+<span class="nc" id="L41">        class ShareLink(val url: String) : RequiredAction()</span>
+<span class="nc" id="L42">        class CopyLink(val url: String) : RequiredAction()</span>
+    }
+}
+
+<span class="nc" id="L46">class WebViewLongPressHandler @Inject constructor(private val context: Context, private val pixel: Pixel) : LongPressHandler {</span>
+
+    override fun handleLongPress(longPressTargetType: Int, longPressTargetUrl: String?, menu: ContextMenu) {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        menu.setHeaderTitle(longPressTargetUrl ?: context.getString(R.string.options))</span>
+
+<span class="nc" id="L51">        var menuShown = true</span>
+<span class="nc bnc" id="L52" title="All 4 branches missed.">        when (longPressTargetType) {</span>
+            WebView.HitTestResult.IMAGE_TYPE -&gt; {
+<span class="nc bnc" id="L54" title="All 2 branches missed.">                if (isLinkSupported(longPressTargetUrl)) {</span>
+<span class="nc" id="L55">                    addImageMenuOptions(menu)</span>
+                }
+            }
+            WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -&gt; {
+<span class="nc bnc" id="L59" title="All 2 branches missed.">                if (isLinkSupported(longPressTargetUrl)) {</span>
+<span class="nc" id="L60">                    addImageMenuOptions(menu)</span>
+<span class="nc" id="L61">                    addLinkMenuOptions(menu)</span>
+                }
+            }
+            WebView.HitTestResult.SRC_ANCHOR_TYPE -&gt; {
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                if (isLinkSupported(longPressTargetUrl)) {</span>
+<span class="nc" id="L66">                    addLinkMenuOptions(menu)</span>
+                }
+            }
+            else -&gt; {
+<span class="nc" id="L70">                Timber.v(&quot;App does not yet handle target type: $longPressTargetType&quot;)</span>
+<span class="nc" id="L71">                menuShown = false</span>
+            }
+        }
+
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (menuShown) {</span>
+<span class="nc" id="L76">            pixel.fire(LONG_PRESS)</span>
+        }
+
+<span class="nc" id="L79">    }</span>
+
+    private fun addImageMenuOptions(menu: ContextMenu) {
+<span class="nc" id="L82">        menu.add(0, CONTEXT_MENU_ID_DOWNLOAD_IMAGE, 0, R.string.downloadImage)</span>
+<span class="nc" id="L83">    }</span>
+
+    private fun addLinkMenuOptions(menu: ContextMenu) {
+<span class="nc" id="L86">        menu.add(0, CONTEXT_MENU_ID_OPEN_IN_NEW_TAB, 1, R.string.openInNewTab)</span>
+<span class="nc" id="L87">        menu.add(0, CONTEXT_MENU_ID_OPEN_IN_NEW_BACKGROUND_TAB, 2, R.string.openInNewBackgroundTab)</span>
+<span class="nc" id="L88">        menu.add(0, CONTEXT_MENU_ID_COPY, 3, R.string.copyUrl)</span>
+<span class="nc" id="L89">        menu.add(0, CONTEXT_MENU_ID_SHARE_LINK, 4, R.string.shareLink)</span>
+<span class="nc" id="L90">    }</span>
+
+<span class="nc bnc" id="L92" title="All 4 branches missed.">    private fun isLinkSupported(longPressTargetUrl: String?) = URLUtil.isNetworkUrl(longPressTargetUrl) || URLUtil.isDataUrl(longPressTargetUrl)</span>
+
+    override fun userSelectedMenuItem(longPressTarget: String, item: MenuItem): RequiredAction {
+<span class="nc bnc" id="L95" title="All 6 branches missed.">        return when (item.itemId) {</span>
+            CONTEXT_MENU_ID_OPEN_IN_NEW_TAB -&gt; {
+<span class="nc" id="L97">                pixel.fire(LONG_PRESS_NEW_TAB)</span>
+<span class="nc" id="L98">                return OpenInNewTab(longPressTarget)</span>
+            }
+            CONTEXT_MENU_ID_OPEN_IN_NEW_BACKGROUND_TAB -&gt; {
+<span class="nc" id="L101">                pixel.fire(LONG_PRESS_NEW_BACKGROUND_TAB)</span>
+<span class="nc" id="L102">                return OpenInNewBackgroundTab(longPressTarget)</span>
+            }
+            CONTEXT_MENU_ID_DOWNLOAD_IMAGE -&gt; {
+<span class="nc" id="L105">                pixel.fire(LONG_PRESS_DOWNLOAD_IMAGE)</span>
+<span class="nc" id="L106">                return DownloadFile(longPressTarget)</span>
+            }
+            CONTEXT_MENU_ID_SHARE_LINK -&gt; {
+<span class="nc" id="L109">                pixel.fire(LONG_PRESS_SHARE)</span>
+<span class="nc" id="L110">                return ShareLink(longPressTarget)</span>
+            }
+            CONTEXT_MENU_ID_COPY -&gt; {
+<span class="nc" id="L113">                pixel.fire(LONG_PRESS_COPY_URL)</span>
+<span class="nc" id="L114">                return CopyLink(longPressTarget)</span>
+            }
+<span class="nc" id="L116">            else -&gt; None</span>
+        }
+    }
+
+
+<span class="nc" id="L121">    companion object {</span>
+        const val CONTEXT_MENU_ID_OPEN_IN_NEW_TAB = 1
+        const val CONTEXT_MENU_ID_DOWNLOAD_IMAGE = 2
+        const val CONTEXT_MENU_ID_SHARE_LINK = 3
+        const val CONTEXT_MENU_ID_OPEN_IN_NEW_BACKGROUND_TAB = 4
+        const val CONTEXT_MENU_ID_COPY = 5
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

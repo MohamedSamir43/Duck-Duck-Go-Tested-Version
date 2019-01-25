@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StatisticsRequester.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.statistics.api</a> &gt; <span class="el_source">StatisticsRequester.kt</span></div><h1>StatisticsRequester.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.statistics.api
+
+import android.annotation.SuppressLint
+import com.duckduckgo.app.statistics.VariantManager
+import com.duckduckgo.app.statistics.model.Atb
+import com.duckduckgo.app.statistics.store.StatisticsDataStore
+import io.reactivex.schedulers.Schedulers
+import timber.log.Timber
+
+
+interface StatisticsUpdater {
+    fun initializeAtb()
+    fun refreshRetentionAtb()
+}
+
+<span class="fc" id="L32">class StatisticsRequester(</span>
+    private val store: StatisticsDataStore,
+    private val service: StatisticsService,
+    private val variantManager: VariantManager
+) : StatisticsUpdater {
+
+    @SuppressLint(&quot;CheckResult&quot;)
+    override fun initializeAtb() {
+
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (store.hasInstallationStatistics) {</span>
+<span class="fc" id="L42">            Timber.v(&quot;Atb already initialized&quot;)</span>
+
+<span class="fc" id="L44">            val storedAtb = store.atb</span>
+<span class="pc bpc" id="L45" title="1 of 4 branches missed.">            if (storedAtb != null &amp;&amp; storedAtbFormatNeedsCorrecting(storedAtb)) {</span>
+<span class="fc" id="L46">                Timber.d(&quot;Previous app version stored hardcoded `ma` variant in ATB param; we want to correct this behaviour&quot;)</span>
+<span class="fc" id="L47">                store.atb = Atb(storedAtb.version.removeSuffix(LEGACY_ATB_FORMAT_SUFFIX))</span>
+<span class="fc" id="L48">                store.variant = VariantManager.DEFAULT_VARIANT.key</span>
+            }
+<span class="fc" id="L50">            return</span>
+        }
+
+<span class="fc" id="L53">        service.atb()</span>
+<span class="fc" id="L54">            .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L55">            .flatMap {</span>
+<span class="fc" id="L56">                val atb = Atb(it.version)</span>
+<span class="fc" id="L57">                Timber.i(&quot;$atb&quot;)</span>
+<span class="fc" id="L58">                store.saveAtb(atb)</span>
+<span class="fc" id="L59">                val atbWithVariant = atb.formatWithVariant(variantManager.getVariant())</span>
+<span class="fc" id="L60">                service.exti(atbWithVariant)</span>
+            }
+<span class="fc" id="L62">            .subscribe({</span>
+<span class="fc" id="L63">                Timber.v(&quot;Atb initialization succeeded&quot;)</span>
+<span class="fc" id="L64">            }, {</span>
+<span class="fc" id="L65">                store.clearAtb()</span>
+<span class="fc" id="L66">                Timber.w(&quot;Atb initialization failed ${it.localizedMessage}&quot;)</span>
+<span class="fc" id="L67">            })</span>
+<span class="fc" id="L68">    }</span>
+
+<span class="fc" id="L70">    private fun storedAtbFormatNeedsCorrecting(storedAtb: Atb): Boolean = storedAtb.version.endsWith(LEGACY_ATB_FORMAT_SUFFIX)</span>
+
+    @SuppressLint(&quot;CheckResult&quot;)
+    override fun refreshRetentionAtb() {
+
+<span class="fc" id="L75">        val atb = store.atb</span>
+<span class="fc" id="L76">        val retentionAtb = store.retentionAtb</span>
+
+<span class="pc bpc" id="L78" title="1 of 4 branches missed.">        if (atb == null || retentionAtb == null) {</span>
+<span class="fc" id="L79">            initializeAtb()</span>
+<span class="fc" id="L80">            return</span>
+        }
+
+
+<span class="fc" id="L84">        val fullAtb = atb.formatWithVariant(variantManager.getVariant())</span>
+
+<span class="fc" id="L86">        service.updateAtb(fullAtb, retentionAtb)</span>
+<span class="fc" id="L87">            .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L88">            .subscribe({</span>
+<span class="fc" id="L89">                Timber.v(&quot;Atb refresh succeeded&quot;)</span>
+<span class="fc" id="L90">                store.retentionAtb = it.version</span>
+<span class="fc" id="L91">            }, {</span>
+<span class="nc" id="L92">                Timber.v(&quot;Atb refresh failed with error ${it.localizedMessage}&quot;)</span>
+<span class="nc" id="L93">            })</span>
+<span class="fc" id="L94">    }</span>
+
+<span class="fc" id="L96">    companion object {</span>
+        private const val LEGACY_ATB_FORMAT_SUFFIX = &quot;ma&quot;
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

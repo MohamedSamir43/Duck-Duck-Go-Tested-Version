@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TabSwitcherButton.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser</a> &gt; <span class="el_source">TabSwitcherButton.kt</span></div><h1>TabSwitcherButton.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser
+
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.content.Context
+import android.view.LayoutInflater
+import android.widget.FrameLayout
+import kotlinx.android.synthetic.main.view_tab_switcher_button.view.*
+
+<span class="nc" id="L26">class TabSwitcherButton(context: Context) : FrameLayout(context) {</span>
+
+<span class="nc" id="L28">    var count = 0</span>
+        set(value) {
+<span class="nc" id="L30">            field = value</span>
+<span class="nc bnc" id="L31" title="All 2 branches missed.">            val text = if (count &lt; 100) &quot;$count&quot; else &quot;~&quot;</span>
+<span class="nc" id="L32">            tabCount.text = text</span>
+<span class="nc" id="L33">        }</span>
+
+<span class="nc" id="L35">    var hasUnread = false</span>
+        set(value) {
+<span class="nc" id="L37">            field = value</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">            anim.progress = if (hasUnread) 1.0f else 0.0f</span>
+<span class="nc" id="L39">        }</span>
+
+    init {
+<span class="nc" id="L42">        LayoutInflater.from(context).inflate(R.layout.view_tab_switcher_button, this, true)</span>
+
+<span class="nc" id="L44">        clickZone.setOnClickListener {</span>
+<span class="nc" id="L45">            super.callOnClick()</span>
+<span class="nc" id="L46">        }</span>
+    }
+
+    fun increment(callback: () -&gt; Unit) {
+<span class="nc" id="L50">        anim.progress = 0.0f</span>
+
+<span class="nc" id="L52">        anim.addAnimatorListener(object : AnimatorListenerAdapter() {</span>
+            override fun onAnimationEnd(animation: Animator?) {
+<span class="nc" id="L54">                callback()</span>
+<span class="nc" id="L55">            }</span>
+        })
+
+<span class="nc" id="L58">        fadeOutCount {</span>
+<span class="nc" id="L59">            count += 1</span>
+<span class="nc" id="L60">            fadeInCount()</span>
+<span class="nc" id="L61">        }</span>
+
+<span class="nc" id="L63">        anim.playAnimation()</span>
+<span class="nc" id="L64">    }</span>
+
+    private fun fadeOutCount(callback: () -&gt; Unit) {
+<span class="nc" id="L67">        val listener = object : AnimatorListenerAdapter() {</span>
+            override fun onAnimationEnd(animation: Animator?) {
+                // otherwise on end keeps being called repeatedly
+<span class="nc" id="L70">                tabCount.animate().setListener(null)</span>
+<span class="nc" id="L71">                callback()</span>
+<span class="nc" id="L72">            }</span>
+        }
+
+<span class="nc" id="L75">        tabCount.animate()</span>
+<span class="nc" id="L76">            .setDuration(300)</span>
+<span class="nc" id="L77">            .alpha(0.0f)</span>
+<span class="nc" id="L78">            .setListener(listener)</span>
+<span class="nc" id="L79">            .start()</span>
+<span class="nc" id="L80">    }</span>
+
+    private fun fadeInCount() {
+<span class="nc" id="L83">        tabCount.animate()</span>
+<span class="nc" id="L84">            .setDuration(300)</span>
+<span class="nc" id="L85">            .alpha(1.0f)</span>
+<span class="nc" id="L86">            .start()</span>
+<span class="nc" id="L87">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

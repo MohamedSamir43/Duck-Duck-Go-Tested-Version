@@ -1,0 +1,693 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BrowserTabViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser</a> &gt; <span class="el_source">BrowserTabViewModel.kt</span></div><h1>BrowserTabViewModel.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser
+
+import android.graphics.Bitmap
+import android.net.Uri
+import android.view.ContextMenu
+import android.view.MenuItem
+import android.view.View
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
+import android.webkit.WebView
+import androidx.annotation.AnyThread
+import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
+import androidx.core.net.toUri
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
+import com.duckduckgo.app.autocomplete.api.AutoCompleteApi
+import com.duckduckgo.app.autocomplete.api.AutoCompleteApi.AutoCompleteResult
+import com.duckduckgo.app.bookmarks.db.BookmarkEntity
+import com.duckduckgo.app.bookmarks.db.BookmarksDao
+import com.duckduckgo.app.bookmarks.ui.SaveBookmarkDialogFragment.SaveBookmarkListener
+import com.duckduckgo.app.browser.BrowserTabViewModel.Command.*
+import com.duckduckgo.app.browser.BrowserWebViewClient.BrowserNavigationOptions
+import com.duckduckgo.app.browser.LongPressHandler.RequiredAction
+import com.duckduckgo.app.browser.SpecialUrlDetector.UrlType.IntentType
+import com.duckduckgo.app.browser.addToHome.AddToHomeCapabilityDetector
+import com.duckduckgo.app.browser.favicon.FaviconDownloader
+import com.duckduckgo.app.browser.omnibar.OmnibarEntryConverter
+import com.duckduckgo.app.browser.session.WebViewSessionStorage
+import com.duckduckgo.app.feedback.db.SurveyDao
+import com.duckduckgo.app.feedback.model.Survey
+import com.duckduckgo.app.global.*
+import com.duckduckgo.app.global.db.AppConfigurationDao
+import com.duckduckgo.app.global.db.AppConfigurationEntity
+import com.duckduckgo.app.global.install.AppInstallStore
+import com.duckduckgo.app.global.install.daysInstalled
+import com.duckduckgo.app.global.model.Site
+import com.duckduckgo.app.global.model.SiteFactory
+import com.duckduckgo.app.privacy.db.NetworkLeaderboardDao
+import com.duckduckgo.app.privacy.db.NetworkLeaderboardEntry
+import com.duckduckgo.app.privacy.db.SiteVisitedEntity
+import com.duckduckgo.app.privacy.model.PrivacyGrade
+import com.duckduckgo.app.settings.db.SettingsDataStore
+import com.duckduckgo.app.statistics.api.StatisticsUpdater
+import com.duckduckgo.app.tabs.model.TabEntity
+import com.duckduckgo.app.tabs.model.TabRepository
+import com.duckduckgo.app.trackerdetection.model.TrackingEvent
+import com.jakewharton.rxrelay2.PublishRelay
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
+import timber.log.Timber
+import java.util.concurrent.TimeUnit
+
+<span class="nc" id="L72">class BrowserTabViewModel(</span>
+    private val statisticsUpdater: StatisticsUpdater,
+    private val queryUrlConverter: OmnibarEntryConverter,
+    private val duckDuckGoUrlDetector: DuckDuckGoUrlDetector,
+    private val siteFactory: SiteFactory,
+    private val tabRepository: TabRepository,
+    private val networkLeaderboardDao: NetworkLeaderboardDao,
+    private val bookmarksDao: BookmarksDao,
+    private val autoCompleteApi: AutoCompleteApi,
+    private val appSettingsPreferencesStore: SettingsDataStore,
+    private val longPressHandler: LongPressHandler,
+    private val webViewSessionStorage: WebViewSessionStorage,
+    private val specialUrlDetector: SpecialUrlDetector,
+    private val faviconDownloader: FaviconDownloader,
+    private val addToHomeCapabilityDetector: AddToHomeCapabilityDetector,
+    private val appInstallStore: AppInstallStore,
+    private val surveyDao: SurveyDao,
+    appConfigurationDao: AppConfigurationDao
+<span class="nc" id="L90">) : WebViewClientListener, SaveBookmarkListener, ViewModel() {</span>
+
+<span class="nc" id="L92">    data class GlobalLayoutViewState(</span>
+<span class="nc" id="L93">        val isNewTabState: Boolean = true</span>
+    )
+
+<span class="nc" id="L96">    data class BrowserViewState(</span>
+<span class="nc" id="L97">        val browserShowing: Boolean = false,</span>
+<span class="nc" id="L98">        val isFullScreen: Boolean = false,</span>
+<span class="nc" id="L99">        val isDesktopBrowsingMode: Boolean = false,</span>
+<span class="nc" id="L100">        val showPrivacyGrade: Boolean = false,</span>
+<span class="nc" id="L101">        val showClearButton: Boolean = false,</span>
+<span class="nc" id="L102">        val showTabsButton: Boolean = true,</span>
+<span class="nc" id="L103">        val showFireButton: Boolean = true,</span>
+<span class="nc" id="L104">        val showMenuButton: Boolean = true,</span>
+<span class="nc" id="L105">        val canSharePage: Boolean = false,</span>
+<span class="nc" id="L106">        val canAddBookmarks: Boolean = false,</span>
+<span class="nc" id="L107">        val canGoBack: Boolean = false,</span>
+<span class="nc" id="L108">        val canGoForward: Boolean = false,</span>
+<span class="nc" id="L109">        val addToHomeEnabled: Boolean = false,</span>
+<span class="nc" id="L110">        val addToHomeVisible: Boolean = false</span>
+    )
+
+<span class="nc" id="L113">    data class OmnibarViewState(</span>
+<span class="nc" id="L114">        val omnibarText: String = &quot;&quot;,</span>
+<span class="nc" id="L115">        val isEditing: Boolean = false</span>
+    )
+
+<span class="nc" id="L118">    data class LoadingViewState(</span>
+<span class="nc" id="L119">        val isLoading: Boolean = false,</span>
+<span class="nc" id="L120">        val progress: Int = 0</span>
+    )
+
+<span class="nc" id="L123">    data class FindInPageViewState(</span>
+<span class="nc" id="L124">        val visible: Boolean = false,</span>
+<span class="nc" id="L125">        val showNumberMatches: Boolean = false,</span>
+<span class="nc" id="L126">        val activeMatchIndex: Int = 0,</span>
+<span class="nc" id="L127">        val searchTerm: String = &quot;&quot;,</span>
+<span class="nc" id="L128">        val numberMatches: Int = 0,</span>
+<span class="nc" id="L129">        val canFindInPage: Boolean = false</span>
+    )
+
+<span class="nc" id="L132">    data class SurveyViewState(</span>
+<span class="nc" id="L133">        val hasValidSurvey: Boolean = false</span>
+    )
+
+<span class="nc" id="L136">    data class AutoCompleteViewState(</span>
+<span class="nc" id="L137">        val showSuggestions: Boolean = false,</span>
+<span class="nc" id="L138">        val searchResults: AutoCompleteResult = AutoCompleteResult(&quot;&quot;, emptyList())</span>
+    )
+
+<span class="nc" id="L141">    sealed class Command {</span>
+<span class="nc" id="L142">        object LandingPage : Command()</span>
+<span class="nc" id="L143">        object Refresh : Command()</span>
+<span class="nc" id="L144">        class Navigate(val url: String) : Command()</span>
+<span class="nc" id="L145">        class OpenInNewTab(val query: String) : Command()</span>
+<span class="nc" id="L146">        class OpenInNewBackgroundTab(val query: String) : Command()</span>
+<span class="nc" id="L147">        class DialNumber(val telephoneNumber: String) : Command()</span>
+<span class="nc" id="L148">        class SendSms(val telephoneNumber: String) : Command()</span>
+<span class="nc" id="L149">        class SendEmail(val emailAddress: String) : Command()</span>
+<span class="nc" id="L150">        object ShowKeyboard : Command()</span>
+<span class="nc" id="L151">        object HideKeyboard : Command()</span>
+<span class="nc" id="L152">        class ShowFullScreen(val view: View) : Command()</span>
+<span class="nc" id="L153">        class DownloadImage(val url: String) : Command()</span>
+<span class="nc" id="L154">        class ShareLink(val url: String) : Command()</span>
+<span class="nc" id="L155">        class CopyLink(val url: String) : Command()</span>
+<span class="nc" id="L156">        class FindInPageCommand(val searchTerm: String) : Command()</span>
+<span class="nc" id="L157">        class BrokenSiteFeedback(val url: String?) : Command()</span>
+<span class="nc" id="L158">        class DisplayMessage(@StringRes val messageId: Int) : Command()</span>
+<span class="nc" id="L159">        object DismissFindInPage : Command()</span>
+<span class="nc" id="L160">        class ShowFileChooser(val filePathCallback: ValueCallback&lt;Array&lt;Uri&gt;&gt;, val fileChooserParams: WebChromeClient.FileChooserParams) : Command()</span>
+<span class="nc" id="L161">        class HandleExternalAppLink(val appLink: IntentType) : Command()</span>
+<span class="nc" id="L162">        class AddHomeShortcut(val title: String, val url: String, val icon: Bitmap? = null) : Command()</span>
+<span class="nc" id="L163">        class LaunchSurvey(val survey: Survey) : Command()</span>
+    }
+
+<span class="nc" id="L166">    val autoCompleteViewState: MutableLiveData&lt;AutoCompleteViewState&gt; = MutableLiveData()</span>
+<span class="nc" id="L167">    val browserViewState: MutableLiveData&lt;BrowserViewState&gt; = MutableLiveData()</span>
+<span class="nc" id="L168">    val globalLayoutState: MutableLiveData&lt;GlobalLayoutViewState&gt; = MutableLiveData()</span>
+<span class="nc" id="L169">    val loadingViewState: MutableLiveData&lt;LoadingViewState&gt; = MutableLiveData()</span>
+<span class="nc" id="L170">    val omnibarViewState: MutableLiveData&lt;OmnibarViewState&gt; = MutableLiveData()</span>
+<span class="nc" id="L171">    val findInPageViewState: MutableLiveData&lt;FindInPageViewState&gt; = MutableLiveData()</span>
+<span class="nc" id="L172">    val surveyViewState: MutableLiveData&lt;SurveyViewState&gt; = MutableLiveData()</span>
+
+<span class="nc" id="L174">    val tabs: LiveData&lt;List&lt;TabEntity&gt;&gt; = tabRepository.liveTabs</span>
+<span class="nc" id="L175">    val survey: LiveData&lt;Survey&gt; = surveyDao.getLiveScheduled()</span>
+<span class="nc" id="L176">    val privacyGrade: MutableLiveData&lt;PrivacyGrade&gt; = MutableLiveData()</span>
+<span class="nc" id="L177">    val url: SingleLiveEvent&lt;String&gt; = SingleLiveEvent()</span>
+<span class="nc" id="L178">    val command: SingleLiveEvent&lt;Command&gt; = SingleLiveEvent()</span>
+
+    @VisibleForTesting
+<span class="nc" id="L181">    val appConfigurationObserver: Observer&lt;AppConfigurationEntity&gt; = Observer { appConfiguration -&gt;</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        appConfiguration?.let {</span>
+<span class="nc" id="L183">            Timber.i(&quot;App configuration downloaded: ${it.appConfigurationDownloaded}&quot;)</span>
+<span class="nc" id="L184">            appConfigurationDownloaded = it.appConfigurationDownloaded</span>
+<span class="nc" id="L185">        }</span>
+<span class="nc" id="L186">    }</span>
+
+    private var appConfigurationDownloaded = false
+<span class="nc" id="L189">    private val appConfigurationObservable = appConfigurationDao.appConfigurationStatus()</span>
+<span class="nc" id="L190">    private val autoCompletePublishSubject = PublishRelay.create&lt;String&gt;()</span>
+<span class="nc" id="L191">    private var siteLiveData = MutableLiveData&lt;Site&gt;()</span>
+    private var site: Site? = null
+    private lateinit var tabId: String
+    private var currentSurvey: Survey? = null
+
+
+    init {
+<span class="nc" id="L198">        initializeViewStates()</span>
+
+<span class="nc" id="L200">        appConfigurationObservable.observeForever(appConfigurationObserver)</span>
+<span class="nc" id="L201">        configureAutoComplete()</span>
+    }
+
+    fun loadData(tabId: String, initialUrl: String?) {
+<span class="nc" id="L205">        this.tabId = tabId</span>
+<span class="nc" id="L206">        siteLiveData = tabRepository.retrieveSiteData(tabId)</span>
+<span class="nc" id="L207">        site = siteLiveData.value</span>
+
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        initialUrl?.let {</span>
+<span class="nc" id="L210">            site = siteFactory.build(it)</span>
+<span class="nc" id="L211">        }</span>
+<span class="nc" id="L212">    }</span>
+
+    fun onViewReady() {
+<span class="nc bnc" id="L215" title="All 4 branches missed.">        site?.url?.let {</span>
+<span class="nc" id="L216">            onUserSubmittedQuery(it)</span>
+<span class="nc" id="L217">        }</span>
+<span class="nc" id="L218">    }</span>
+
+    private fun configureAutoComplete() {
+<span class="nc" id="L221">        autoCompletePublishSubject</span>
+<span class="nc" id="L222">            .debounce(300, TimeUnit.MILLISECONDS)</span>
+<span class="nc" id="L223">            .distinctUntilChanged()</span>
+<span class="nc" id="L224">            .switchMap { autoCompleteApi.autoComplete(it) }</span>
+<span class="nc" id="L225">            .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L226">            .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L227">            .subscribe({ result -&gt;</span>
+<span class="nc" id="L228">                onAutoCompleteResultReceived(result)</span>
+<span class="nc" id="L229">            }, { t: Throwable? -&gt; Timber.w(t, &quot;Failed to get search results&quot;) })</span>
+<span class="nc" id="L230">    }</span>
+
+    private fun onAutoCompleteResultReceived(result: AutoCompleteResult) {
+<span class="nc" id="L233">        val results = result.suggestions.take(6)</span>
+<span class="nc" id="L234">        val currentViewState = currentAutoCompleteViewState()</span>
+<span class="nc" id="L235">        autoCompleteViewState.value = currentViewState.copy(searchResults = AutoCompleteResult(result.query, results))</span>
+<span class="nc" id="L236">    }</span>
+
+    @VisibleForTesting
+    public override fun onCleared() {
+<span class="nc" id="L240">        super.onCleared()</span>
+<span class="nc" id="L241">        appConfigurationObservable.removeObserver(appConfigurationObserver)</span>
+<span class="nc" id="L242">    }</span>
+
+    fun registerWebViewListener(browserWebViewClient: BrowserWebViewClient, browserChromeClient: BrowserChromeClient) {
+<span class="nc" id="L245">        browserWebViewClient.webViewClientListener = this</span>
+<span class="nc" id="L246">        browserChromeClient.webViewClientListener = this</span>
+<span class="nc" id="L247">    }</span>
+
+    fun onViewVisible() {
+<span class="nc bnc" id="L250" title="All 2 branches missed.">        command.value = if (url.value == null) ShowKeyboard else Command.HideKeyboard</span>
+<span class="nc" id="L251">    }</span>
+
+    fun onUserSubmittedQuery(input: String) {
+<span class="nc bnc" id="L254" title="All 2 branches missed.">        if (input.isBlank()) {</span>
+<span class="nc" id="L255">            return</span>
+        }
+
+<span class="nc" id="L258">        command.value = HideKeyboard</span>
+<span class="nc" id="L259">        val trimmedInput = input.trim()</span>
+
+<span class="nc" id="L261">        val type = specialUrlDetector.determineType(trimmedInput)</span>
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        if (type is IntentType) {</span>
+<span class="nc" id="L263">            externalAppLinkClicked(type)</span>
+        } else {
+<span class="nc" id="L265">            url.value = queryUrlConverter.convertQueryToUrl(trimmedInput)</span>
+        }
+
+<span class="nc" id="L268">        globalLayoutState.value = GlobalLayoutViewState(isNewTabState = false)</span>
+<span class="nc" id="L269">        findInPageViewState.value = FindInPageViewState(visible = false, canFindInPage = true)</span>
+<span class="nc" id="L270">        omnibarViewState.value = currentOmnibarViewState().copy(omnibarText = trimmedInput)</span>
+<span class="nc" id="L271">        browserViewState.value = currentBrowserViewState().copy(browserShowing = true, showClearButton = false)</span>
+<span class="nc" id="L272">        autoCompleteViewState.value = AutoCompleteViewState(false)</span>
+<span class="nc" id="L273">    }</span>
+
+    override fun progressChanged(newProgress: Int) {
+<span class="nc" id="L276">        Timber.v(&quot;Loading in progress $newProgress&quot;)</span>
+
+<span class="nc" id="L278">        val progress = currentLoadingViewState()</span>
+<span class="nc" id="L279">        loadingViewState.value = progress.copy(progress = newProgress)</span>
+<span class="nc" id="L280">    }</span>
+
+    override fun goFullScreen(view: View) {
+<span class="nc" id="L283">        command.value = ShowFullScreen(view)</span>
+
+<span class="nc" id="L285">        val currentState = currentBrowserViewState()</span>
+<span class="nc" id="L286">        browserViewState.value = currentState.copy(isFullScreen = true)</span>
+<span class="nc" id="L287">    }</span>
+
+    override fun exitFullScreen() {
+<span class="nc" id="L290">        val currentState = currentBrowserViewState()</span>
+<span class="nc" id="L291">        browserViewState.value = currentState.copy(isFullScreen = false)</span>
+<span class="nc" id="L292">    }</span>
+
+    override fun loadingStarted() {
+<span class="nc" id="L295">        Timber.v(&quot;Loading started&quot;)</span>
+<span class="nc" id="L296">        val progress = currentLoadingViewState()</span>
+<span class="nc" id="L297">        loadingViewState.value = progress.copy(isLoading = true)</span>
+<span class="nc" id="L298">        site = null</span>
+<span class="nc" id="L299">        onSiteChanged()</span>
+<span class="nc" id="L300">    }</span>
+
+    override fun navigationOptionsChanged(navigationOptions: BrowserNavigationOptions) {
+<span class="nc" id="L303">        browserViewState.value = currentBrowserViewState().copy(</span>
+<span class="nc" id="L304">            canGoBack = navigationOptions.canGoBack,</span>
+<span class="nc" id="L305">            canGoForward = navigationOptions.canGoForward</span>
+        )
+<span class="nc" id="L307">    }</span>
+
+    override fun loadingFinished(url: String?) {
+<span class="nc" id="L310">        Timber.v(&quot;Loading finished&quot;)</span>
+
+<span class="nc" id="L312">        val currentOmnibarViewState = currentOmnibarViewState()</span>
+<span class="nc" id="L313">        val currentLoadingViewState = currentLoadingViewState()</span>
+
+<span class="nc bnc" id="L315" title="All 2 branches missed.">        val omnibarText = if (url != null) omnibarTextForUrl(url) else currentOmnibarViewState.omnibarText</span>
+
+<span class="nc" id="L317">        loadingViewState.value = currentLoadingViewState.copy(isLoading = false)</span>
+<span class="nc" id="L318">        omnibarViewState.value = currentOmnibarViewState.copy(omnibarText = omnibarText)</span>
+
+<span class="nc" id="L320">        registerSiteVisit()</span>
+<span class="nc" id="L321">    }</span>
+
+    private fun registerSiteVisit() {
+<span class="nc bnc" id="L324" title="All 2 branches missed.">        val domainVisited = url.value?.toUri()?.host ?: return</span>
+<span class="nc" id="L325">        Schedulers.io().scheduleDirect {</span>
+<span class="nc" id="L326">            networkLeaderboardDao.insert(SiteVisitedEntity(domainVisited))</span>
+<span class="nc" id="L327">        }</span>
+<span class="nc" id="L328">    }</span>
+
+    override fun titleReceived(title: String) {
+<span class="nc bnc" id="L331" title="All 2 branches missed.">        site?.title = title</span>
+<span class="nc" id="L332">        onSiteChanged()</span>
+<span class="nc" id="L333">    }</span>
+
+    @AnyThread
+    override fun sendEmailRequested(emailAddress: String) {
+<span class="nc" id="L337">        command.postValue(SendEmail(emailAddress))</span>
+<span class="nc" id="L338">    }</span>
+
+    @AnyThread
+    override fun dialTelephoneNumberRequested(telephoneNumber: String) {
+<span class="nc" id="L342">        command.postValue(DialNumber(telephoneNumber))</span>
+<span class="nc" id="L343">    }</span>
+
+    @AnyThread
+    override fun sendSmsRequested(telephoneNumber: String) {
+<span class="nc" id="L347">        command.postValue(SendSms(telephoneNumber))</span>
+<span class="nc" id="L348">    }</span>
+
+    override fun urlChanged(url: String?) {
+<span class="nc" id="L351">        Timber.v(&quot;Url changed: $url&quot;)</span>
+
+<span class="nc bnc" id="L353" title="All 2 branches missed.">        if (url == null) {</span>
+<span class="nc" id="L354">            findInPageViewState.value = FindInPageViewState(visible = false, canFindInPage = false)</span>
+
+<span class="nc" id="L356">            val currentBrowserViewState = currentBrowserViewState()</span>
+<span class="nc" id="L357">            browserViewState.value = currentBrowserViewState.copy(</span>
+<span class="nc" id="L358">                canAddBookmarks = false,</span>
+<span class="nc" id="L359">                addToHomeEnabled = false,</span>
+<span class="nc" id="L360">                addToHomeVisible = addToHomeCapabilityDetector.isAddToHomeSupported()</span>
+            )
+
+<span class="nc" id="L363">            return</span>
+        }
+
+
+<span class="nc" id="L367">        val currentBrowserViewState = currentBrowserViewState()</span>
+<span class="nc" id="L368">        val currentOmnibarViewState = currentOmnibarViewState()</span>
+
+<span class="nc" id="L370">        omnibarViewState.value = currentOmnibarViewState.copy(omnibarText = omnibarTextForUrl(url))</span>
+<span class="nc" id="L371">        findInPageViewState.value = FindInPageViewState(visible = false, canFindInPage = true)</span>
+<span class="nc" id="L372">        browserViewState.value = currentBrowserViewState.copy(</span>
+<span class="nc" id="L373">            browserShowing = true,</span>
+<span class="nc" id="L374">            canAddBookmarks = true,</span>
+<span class="nc" id="L375">            addToHomeEnabled = true,</span>
+<span class="nc" id="L376">            addToHomeVisible = addToHomeCapabilityDetector.isAddToHomeSupported(),</span>
+<span class="nc" id="L377">            canSharePage = true,</span>
+<span class="nc" id="L378">            showPrivacyGrade = appConfigurationDownloaded</span>
+        )
+
+<span class="nc bnc" id="L381" title="All 2 branches missed.">        if (duckDuckGoUrlDetector.isDuckDuckGoQueryUrl(url)) {</span>
+<span class="nc" id="L382">            statisticsUpdater.refreshRetentionAtb()</span>
+        }
+
+<span class="nc bnc" id="L385" title="All 2 branches missed.">        if (currentUrl() != url) {</span>
+<span class="nc" id="L386">            site = siteFactory.build(url)</span>
+<span class="nc" id="L387">            onSiteChanged()</span>
+        }
+<span class="nc" id="L389">    }</span>
+
+    private fun omnibarTextForUrl(url: String): String {
+<span class="nc bnc" id="L392" title="All 2 branches missed.">        if (duckDuckGoUrlDetector.isDuckDuckGoQueryUrl(url)) {</span>
+<span class="nc bnc" id="L393" title="All 2 branches missed.">            return duckDuckGoUrlDetector.extractQuery(url) ?: &quot;&quot;</span>
+        }
+<span class="nc" id="L395">        return url</span>
+    }
+
+    override fun trackerDetected(event: TrackingEvent) {
+<span class="nc bnc" id="L399" title="All 4 branches missed.">        if (event.documentUrl == site?.url) {</span>
+<span class="nc bnc" id="L400" title="All 2 branches missed.">            site?.trackerDetected(event)</span>
+<span class="nc" id="L401">            onSiteChanged()</span>
+        }
+<span class="nc" id="L403">        updateNetworkLeaderboard(event)</span>
+<span class="nc" id="L404">    }</span>
+
+    private fun updateNetworkLeaderboard(event: TrackingEvent) {
+<span class="nc bnc" id="L407" title="All 4 branches missed.">        val networkName = event.trackerNetwork?.name ?: return</span>
+<span class="nc bnc" id="L408" title="All 2 branches missed.">        val domainVisited = Uri.parse(event.documentUrl).host ?: return</span>
+<span class="nc" id="L409">        networkLeaderboardDao.insert(NetworkLeaderboardEntry(networkName, domainVisited))</span>
+<span class="nc" id="L410">        networkLeaderboardDao.insert(SiteVisitedEntity(domainVisited))</span>
+<span class="nc" id="L411">    }</span>
+
+    override fun pageHasHttpResources(page: String?) {
+<span class="nc bnc" id="L414" title="All 4 branches missed.">        if (page == site?.url) {</span>
+<span class="nc bnc" id="L415" title="All 2 branches missed.">            site?.hasHttpResources = true</span>
+<span class="nc" id="L416">            onSiteChanged()</span>
+        }
+<span class="nc" id="L418">    }</span>
+
+    private fun onSiteChanged() {
+<span class="nc" id="L421">        siteLiveData.postValue(site)</span>
+<span class="nc bnc" id="L422" title="All 2 branches missed.">        privacyGrade.postValue(site?.improvedGrade)</span>
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        tabRepository.update(tabId, site)</span>
+<span class="nc" id="L424">    }</span>
+
+    override fun showFileChooser(filePathCallback: ValueCallback&lt;Array&lt;Uri&gt;&gt;, fileChooserParams: WebChromeClient.FileChooserParams) {
+<span class="nc" id="L427">        command.value = Command.ShowFileChooser(filePathCallback, fileChooserParams)</span>
+<span class="nc" id="L428">    }</span>
+
+<span class="nc bnc" id="L430" title="All 2 branches missed.">    private fun currentAutoCompleteViewState(): AutoCompleteViewState = autoCompleteViewState.value!!</span>
+<span class="nc bnc" id="L431" title="All 2 branches missed.">    private fun currentBrowserViewState(): BrowserViewState = browserViewState.value!!</span>
+<span class="nc bnc" id="L432" title="All 2 branches missed.">    private fun currentFindInPageViewState(): FindInPageViewState = findInPageViewState.value!!</span>
+<span class="nc bnc" id="L433" title="All 2 branches missed.">    private fun currentOmnibarViewState(): OmnibarViewState = omnibarViewState.value!!</span>
+<span class="nc bnc" id="L434" title="All 2 branches missed.">    private fun currentLoadingViewState(): LoadingViewState = loadingViewState.value!!</span>
+
+    fun onOmnibarInputStateChanged(query: String, hasFocus: Boolean) {
+
+        // determine if empty list to be shown, or existing search results
+<span class="nc bnc" id="L439" title="All 2 branches missed.">        val autoCompleteSearchResults = if (query.isBlank()) {</span>
+<span class="nc" id="L440">            AutoCompleteResult(query, emptyList())</span>
+        } else {
+<span class="nc" id="L442">            currentAutoCompleteViewState().searchResults</span>
+        }
+
+<span class="nc" id="L445">        val currentOmnibarViewState = currentOmnibarViewState()</span>
+<span class="nc" id="L446">        val hasQueryChanged = (currentOmnibarViewState.omnibarText != query)</span>
+<span class="nc" id="L447">        val autoCompleteSuggestionsEnabled = appSettingsPreferencesStore.autoCompleteSuggestionsEnabled</span>
+<span class="nc bnc" id="L448" title="All 10 branches missed.">        val showAutoCompleteSuggestions = hasFocus &amp;&amp; query.isNotBlank() &amp;&amp; hasQueryChanged &amp;&amp; autoCompleteSuggestionsEnabled</span>
+<span class="nc bnc" id="L449" title="All 6 branches missed.">        val showClearButton = hasFocus &amp;&amp; query.isNotBlank()</span>
+<span class="nc bnc" id="L450" title="All 4 branches missed.">        val showControls = !hasFocus || query.isBlank()</span>
+
+<span class="nc" id="L452">        omnibarViewState.value = currentOmnibarViewState.copy(isEditing = hasFocus)</span>
+
+<span class="nc" id="L454">        val currentBrowserViewState = currentBrowserViewState()</span>
+<span class="nc" id="L455">        browserViewState.value = currentBrowserViewState.copy(</span>
+<span class="nc bnc" id="L456" title="All 4 branches missed.">            showPrivacyGrade = appConfigurationDownloaded &amp;&amp; currentBrowserViewState.browserShowing,</span>
+<span class="nc" id="L457">            showTabsButton = showControls,</span>
+<span class="nc" id="L458">            showFireButton = showControls,</span>
+<span class="nc" id="L459">            showMenuButton = showControls,</span>
+<span class="nc" id="L460">            showClearButton = showClearButton</span>
+        )
+
+<span class="nc" id="L463">        autoCompleteViewState.value = AutoCompleteViewState(showAutoCompleteSuggestions, autoCompleteSearchResults)</span>
+
+<span class="nc bnc" id="L465" title="All 6 branches missed.">        if (hasQueryChanged &amp;&amp; hasFocus &amp;&amp; autoCompleteSuggestionsEnabled) {</span>
+<span class="nc" id="L466">            autoCompletePublishSubject.accept(query.trim())</span>
+        }
+<span class="nc" id="L468">    }</span>
+
+    override fun onBookmarkSaved(id: Int?, title: String, url: String) {
+<span class="nc" id="L471">        Schedulers.io().scheduleDirect {</span>
+<span class="nc" id="L472">            bookmarksDao.insert(BookmarkEntity(title = title, url = url))</span>
+<span class="nc" id="L473">        }</span>
+<span class="nc" id="L474">        command.value = DisplayMessage(R.string.bookmarkAddedFeedback)</span>
+<span class="nc" id="L475">    }</span>
+
+    fun onBrokenSiteSelected() {
+<span class="nc bnc" id="L478" title="All 2 branches missed.">        command.value = BrokenSiteFeedback(site?.url)</span>
+<span class="nc" id="L479">    }</span>
+
+    fun onUserSelectedToEditQuery(query: String) {
+<span class="nc" id="L482">        omnibarViewState.value = currentOmnibarViewState().copy(isEditing = false, omnibarText = query)</span>
+<span class="nc" id="L483">        autoCompleteViewState.value = AutoCompleteViewState(showSuggestions = false)</span>
+<span class="nc" id="L484">    }</span>
+
+    fun userLongPressedInWebView(target: WebView.HitTestResult, menu: ContextMenu) {
+<span class="nc" id="L487">        Timber.i(&quot;Long pressed on ${target.type}, (extra=${target.extra})&quot;)</span>
+<span class="nc" id="L488">        longPressHandler.handleLongPress(target.type, target.extra, menu)</span>
+<span class="nc" id="L489">    }</span>
+
+    fun userSelectedItemFromLongPressMenu(longPressTarget: String, item: MenuItem): Boolean {
+
+<span class="nc" id="L493">        val requiredAction = longPressHandler.userSelectedMenuItem(longPressTarget, item)</span>
+
+<span class="nc" id="L495">        return when (requiredAction) {</span>
+<span class="nc bnc" id="L496" title="All 2 branches missed.">            is RequiredAction.OpenInNewTab -&gt; {</span>
+<span class="nc" id="L497">                command.value = OpenInNewTab(requiredAction.url)</span>
+<span class="nc" id="L498">                true</span>
+            }
+<span class="nc bnc" id="L500" title="All 2 branches missed.">            is RequiredAction.OpenInNewBackgroundTab -&gt; {</span>
+<span class="nc" id="L501">                openInNewBackgroundTab(requiredAction.url)</span>
+<span class="nc" id="L502">                true</span>
+            }
+<span class="nc bnc" id="L504" title="All 2 branches missed.">            is RequiredAction.DownloadFile -&gt; {</span>
+<span class="nc" id="L505">                command.value = DownloadImage(requiredAction.url)</span>
+<span class="nc" id="L506">                true</span>
+            }
+<span class="nc bnc" id="L508" title="All 2 branches missed.">            is RequiredAction.ShareLink -&gt; {</span>
+<span class="nc" id="L509">                command.value = ShareLink(requiredAction.url)</span>
+<span class="nc" id="L510">                true</span>
+            }
+<span class="nc bnc" id="L512" title="All 2 branches missed.">            is RequiredAction.CopyLink -&gt; {</span>
+<span class="nc" id="L513">                command.value = CopyLink(requiredAction.url)</span>
+<span class="nc" id="L514">                true</span>
+            }
+<span class="nc bnc" id="L516" title="All 2 branches missed.">            RequiredAction.None -&gt; {</span>
+<span class="nc" id="L517">                false</span>
+            }
+        }
+    }
+
+    fun openInNewBackgroundTab(url: String) {
+<span class="nc bnc" id="L523" title="All 2 branches missed.">        tabRepository.addNewTabAfterExistingTab(url, tabId)</span>
+<span class="nc" id="L524">        command.value = OpenInNewBackgroundTab(url)</span>
+<span class="nc" id="L525">    }</span>
+
+    fun userRequestingToFindInPage() {
+<span class="nc" id="L528">        findInPageViewState.value = FindInPageViewState(visible = true, canFindInPage = true)</span>
+<span class="nc" id="L529">    }</span>
+
+    fun userFindingInPage(searchTerm: String) {
+<span class="nc" id="L532">        val currentViewState = currentFindInPageViewState()</span>
+<span class="nc" id="L533">        var findInPage = currentViewState.copy(visible = true, searchTerm = searchTerm)</span>
+<span class="nc bnc" id="L534" title="All 4 branches missed.">        if (searchTerm.isEmpty()) {</span>
+<span class="nc" id="L535">            findInPage = findInPage.copy(showNumberMatches = false)</span>
+        }
+<span class="nc" id="L537">        findInPageViewState.value = findInPage</span>
+<span class="nc" id="L538">        command.value = FindInPageCommand(searchTerm)</span>
+<span class="nc" id="L539">    }</span>
+
+    fun dismissFindInView() {
+<span class="nc" id="L542">        findInPageViewState.value = currentFindInPageViewState().copy(visible = false, searchTerm = &quot;&quot;)</span>
+<span class="nc" id="L543">        command.value = DismissFindInPage</span>
+<span class="nc" id="L544">    }</span>
+
+    fun onFindResultsReceived(activeMatchOrdinal: Int, numberOfMatches: Int) {
+<span class="nc bnc" id="L547" title="All 2 branches missed.">        val activeIndex = if (numberOfMatches == 0) 0 else activeMatchOrdinal + 1</span>
+<span class="nc" id="L548">        val currentViewState = currentFindInPageViewState()</span>
+<span class="nc" id="L549">        findInPageViewState.value = currentViewState.copy(</span>
+<span class="nc" id="L550">            showNumberMatches = true,</span>
+<span class="nc" id="L551">            activeMatchIndex = activeIndex,</span>
+<span class="nc" id="L552">            numberMatches = numberOfMatches</span>
+        )
+<span class="nc" id="L554">    }</span>
+
+    fun onWebSessionRestored() {
+<span class="nc" id="L557">        globalLayoutState.value = GlobalLayoutViewState(isNewTabState = false)</span>
+<span class="nc" id="L558">    }</span>
+
+    fun desktopSiteModeToggled(urlString: String?, desktopSiteRequested: Boolean) {
+<span class="nc" id="L561">        val currentBrowserViewState = currentBrowserViewState()</span>
+<span class="nc" id="L562">        browserViewState.value = currentBrowserViewState.copy(isDesktopBrowsingMode = desktopSiteRequested)</span>
+
+<span class="nc bnc" id="L564" title="All 2 branches missed.">        if (urlString == null) {</span>
+<span class="nc" id="L565">            return</span>
+        }
+<span class="nc" id="L567">        val url = Uri.parse(urlString)</span>
+<span class="nc bnc" id="L568" title="All 4 branches missed.">        if (desktopSiteRequested &amp;&amp; url.isMobileSite) {</span>
+<span class="nc" id="L569">            val desktopUrl = url.toDesktopUri()</span>
+<span class="nc" id="L570">            Timber.i(&quot;Original URL $urlString - attempting $desktopUrl with desktop site UA string&quot;)</span>
+<span class="nc" id="L571">            command.value = Navigate(desktopUrl.toString())</span>
+        } else {
+<span class="nc" id="L573">            command.value = Refresh</span>
+        }
+<span class="nc" id="L575">    }</span>
+
+    override fun currentUrl(): String? {
+<span class="nc bnc" id="L578" title="All 2 branches missed.">        return site?.url</span>
+    }
+
+    fun resetView() {
+<span class="nc" id="L582">        site = null</span>
+<span class="nc" id="L583">        url.value = null</span>
+<span class="nc" id="L584">        onSiteChanged()</span>
+<span class="nc" id="L585">        initializeViewStates()</span>
+<span class="nc" id="L586">    }</span>
+
+    private fun initializeViewStates() {
+<span class="nc" id="L589">        globalLayoutState.value = GlobalLayoutViewState()</span>
+<span class="nc" id="L590">        browserViewState.value = BrowserViewState().copy(addToHomeVisible = addToHomeCapabilityDetector.isAddToHomeSupported())</span>
+<span class="nc" id="L591">        loadingViewState.value = LoadingViewState()</span>
+<span class="nc" id="L592">        autoCompleteViewState.value = AutoCompleteViewState()</span>
+<span class="nc" id="L593">        omnibarViewState.value = OmnibarViewState()</span>
+<span class="nc" id="L594">        findInPageViewState.value = FindInPageViewState()</span>
+<span class="nc" id="L595">        surveyViewState.value = SurveyViewState()</span>
+<span class="nc" id="L596">    }</span>
+
+    fun userSharingLink(url: String?) {
+<span class="nc bnc" id="L599" title="All 2 branches missed.">        if (url != null) {</span>
+<span class="nc" id="L600">            command.value = ShareLink(removeAtbAndSourceParamsFromSearch(url))</span>
+        }
+<span class="nc" id="L602">    }</span>
+
+    private fun removeAtbAndSourceParamsFromSearch(url: String): String {
+<span class="nc bnc" id="L605" title="All 2 branches missed.">        if (!duckDuckGoUrlDetector.isDuckDuckGoQueryUrl(url)) {</span>
+<span class="nc" id="L606">            return url</span>
+        }
+
+<span class="nc" id="L609">        val uri = Uri.parse(url)</span>
+<span class="nc" id="L610">        val paramsToRemove = arrayOf(AppUrl.ParamKey.ATB, AppUrl.ParamKey.SOURCE)</span>
+<span class="nc bnc" id="L611" title="All 2 branches missed.">        val parameterNames = uri.queryParameterNames.filterNot { paramsToRemove.contains(it) }</span>
+<span class="nc" id="L612">        val builder = uri.buildUpon()</span>
+<span class="nc" id="L613">        builder.clearQuery()</span>
+
+<span class="nc bnc" id="L615" title="All 2 branches missed.">        for (paramName in parameterNames) {</span>
+<span class="nc" id="L616">            builder.appendQueryParameter(paramName, uri.getQueryParameter(paramName))</span>
+        }
+
+<span class="nc" id="L619">        return builder.build().toString()</span>
+    }
+
+    fun saveWebViewState(webView: WebView?, tabId: String) {
+<span class="nc" id="L623">        webViewSessionStorage.saveSession(webView, tabId)</span>
+<span class="nc" id="L624">    }</span>
+
+    fun restoreWebViewState(webView: WebView?, lastUrl: String) {
+<span class="nc bnc" id="L627" title="All 2 branches missed.">        val sessionRestored = webViewSessionStorage.restoreSession(webView, tabId)</span>
+<span class="nc bnc" id="L628" title="All 2 branches missed.">        if (sessionRestored) {</span>
+<span class="nc" id="L629">            Timber.v(&quot;Successfully restored session&quot;)</span>
+<span class="nc" id="L630">            onWebSessionRestored()</span>
+        } else {
+<span class="nc bnc" id="L632" title="All 4 branches missed.">            if (lastUrl.isNotBlank()) {</span>
+<span class="nc" id="L633">                Timber.w(&quot;Restoring last url but page history has been lost - url=[$lastUrl]&quot;)</span>
+<span class="nc" id="L634">                onUserSubmittedQuery(lastUrl)</span>
+            }
+        }
+<span class="nc" id="L637">    }</span>
+
+    fun userRequestedToPinPageToHome(currentPage: String) {
+<span class="nc bnc" id="L640" title="All 2 branches missed.">        val title = if (duckDuckGoUrlDetector.isDuckDuckGoQueryUrl(currentPage)) {</span>
+<span class="nc bnc" id="L641" title="All 2 branches missed.">            duckDuckGoUrlDetector.extractQuery(currentPage) ?: currentPage</span>
+        } else {
+<span class="nc" id="L643">            currentPage.toUri().baseHost ?: currentPage</span>
+        }
+
+<span class="nc" id="L646">        faviconDownloader.download(currentPage.toUri())</span>
+<span class="nc" id="L647">            .subscribeOn(Schedulers.io())</span>
+<span class="nc" id="L648">            .observeOn(AndroidSchedulers.mainThread())</span>
+<span class="nc" id="L649">            .subscribe({</span>
+<span class="nc" id="L650">                Timber.i(&quot;Successfully got favicon&quot;)</span>
+<span class="nc" id="L651">                command.value = AddHomeShortcut(title, currentPage, it)</span>
+<span class="nc" id="L652">            }, { throwable -&gt;</span>
+<span class="nc" id="L653">                Timber.w(throwable, &quot;Failed to obtain favicon&quot;)</span>
+<span class="nc" id="L654">                command.value = AddHomeShortcut(title, currentPage)</span>
+<span class="nc" id="L655">            })</span>
+<span class="nc" id="L656">    }</span>
+
+    fun onSurveyChanged(survey: Survey?) {
+<span class="nc bnc" id="L659" title="All 2 branches missed.">        if (survey == null) {</span>
+<span class="nc bnc" id="L660" title="All 2 branches missed.">            surveyViewState.value = surveyViewState.value?.copy(hasValidSurvey = false)</span>
+<span class="nc" id="L661">            return</span>
+        }
+
+<span class="nc bnc" id="L664" title="All 2 branches missed.">        val showOnDay = survey.daysInstalled?.toLong()</span>
+<span class="nc" id="L665">        val daysInstalled = appInstallStore.daysInstalled()</span>
+<span class="nc bnc" id="L666" title="All 4 branches missed.">        if (showOnDay == null || showOnDay == daysInstalled) {</span>
+<span class="nc bnc" id="L667" title="All 2 branches missed.">            surveyViewState.value = surveyViewState.value?.copy(hasValidSurvey = true)</span>
+<span class="nc" id="L668">            currentSurvey = survey</span>
+        }
+<span class="nc" id="L670">    }</span>
+
+    fun onUserOpenedSurvey() {
+<span class="nc bnc" id="L673" title="All 2 branches missed.">        currentSurvey?.let {</span>
+<span class="nc" id="L674">            command.value = LaunchSurvey(it)</span>
+<span class="nc" id="L675">        }</span>
+<span class="nc" id="L676">    }</span>
+
+    fun onUserDismissedSurvey() {
+<span class="nc bnc" id="L679" title="All 2 branches missed.">        surveyViewState.value = surveyViewState.value?.copy(hasValidSurvey = false)</span>
+<span class="nc" id="L680">        currentSurvey = null</span>
+<span class="nc" id="L681">        Schedulers.io().scheduleDirect {</span>
+<span class="nc" id="L682">            surveyDao.cancelScheduledSurveys()</span>
+<span class="nc" id="L683">        }</span>
+<span class="nc" id="L684">    }</span>
+
+    override fun externalAppLinkClicked(appLink: IntentType) {
+<span class="nc" id="L687">        command.value = HandleExternalAppLink(appLink)</span>
+<span class="nc" id="L688">    }</span>
+}
+
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

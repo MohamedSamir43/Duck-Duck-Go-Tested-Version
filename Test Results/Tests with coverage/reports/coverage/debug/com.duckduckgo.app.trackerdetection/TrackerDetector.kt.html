@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TrackerDetector.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.trackerdetection</a> &gt; <span class="el_source">TrackerDetector.kt</span></div><h1>TrackerDetector.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.trackerdetection
+
+import com.duckduckgo.app.global.UriString.Companion.sameOrSubdomain
+import com.duckduckgo.app.privacy.store.PrivacySettingsStore
+import com.duckduckgo.app.trackerdetection.model.ResourceType
+import com.duckduckgo.app.trackerdetection.model.TrackerNetworks
+import com.duckduckgo.app.trackerdetection.model.TrackingEvent
+import timber.log.Timber
+import java.util.concurrent.CopyOnWriteArrayList
+
+interface TrackerDetector {
+    fun addClient(client: Client)
+    fun evaluate(url: String, documentUrl: String, resourceType: ResourceType): TrackingEvent?
+}
+
+<span class="fc" id="L32">class TrackerDetectorImpl(</span>
+    private val networkTrackers: TrackerNetworks,
+    private val settings: PrivacySettingsStore
+) : TrackerDetector {
+
+<span class="fc" id="L37">    private val clients = CopyOnWriteArrayList&lt;Client&gt;()</span>
+
+    /**
+     * Adds a new client. If the client's name matches an existing client, old client is replaced
+     */
+    override fun addClient(client: Client) {
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        clients.removeAll { client.name == it.name }</span>
+<span class="fc" id="L44">        clients.add(client)</span>
+<span class="fc" id="L45">    }</span>
+
+    override fun evaluate(url: String, documentUrl: String, resourceType: ResourceType): TrackingEvent? {
+
+<span class="pc bpc" id="L49" title="1 of 6 branches missed.">        val whitelisted = clients.any { it.name.type == Client.ClientType.WHITELIST &amp;&amp; it.matches(url, documentUrl, resourceType) }</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (whitelisted) {</span>
+<span class="fc" id="L51">            Timber.v(&quot;$documentUrl resource $url is whitelisted&quot;)</span>
+<span class="fc" id="L52">            return null</span>
+        }
+
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (firstParty(url, documentUrl)) {</span>
+<span class="fc" id="L56">            Timber.v(&quot;$url is a first party url&quot;)</span>
+<span class="fc" id="L57">            return null</span>
+        }
+
+<span class="pc bpc" id="L60" title="1 of 6 branches missed.">        val matches = clients.any { it.name.type == Client.ClientType.BLOCKING &amp;&amp; it.matches(url, documentUrl, resourceType) }</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (matches) {</span>
+<span class="fc" id="L62">            Timber.v(&quot;$documentUrl resource $url WAS identified as a tracker&quot;)</span>
+<span class="fc" id="L63">            return TrackingEvent(documentUrl, url, networkTrackers.network(url), settings.privacyOn)</span>
+        }
+
+<span class="fc" id="L66">        Timber.v(&quot;$documentUrl resource $url was not identified as a tracker&quot;)</span>
+<span class="fc" id="L67">        return null</span>
+    }
+
+    private fun firstParty(firstUrl: String, secondUrl: String): Boolean =
+<span class="pc bpc" id="L71" title="1 of 6 branches missed.">        sameOrSubdomain(firstUrl, secondUrl) || sameOrSubdomain(secondUrl, firstUrl) || sameNetworkName(firstUrl, secondUrl)</span>
+
+    private fun sameNetworkName(firstUrl: String, secondUrl: String): Boolean {
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        val firstNetwork = networkTrackers.network(firstUrl) ?: return false</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        val secondNetwork = networkTrackers.network(secondUrl) ?: return false</span>
+<span class="nc" id="L76">        return firstNetwork.name == secondNetwork.name</span>
+    }
+
+
+<span class="fc" id="L80">    val clientCount get() = clients.count()</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

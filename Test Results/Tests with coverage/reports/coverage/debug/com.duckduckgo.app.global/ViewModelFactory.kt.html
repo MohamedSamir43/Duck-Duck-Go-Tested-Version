@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ViewModelFactory.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.global</a> &gt; <span class="el_source">ViewModelFactory.kt</span></div><h1>ViewModelFactory.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.global
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import com.duckduckgo.app.autocomplete.api.AutoCompleteApi
+import com.duckduckgo.app.bookmarks.db.BookmarksDao
+import com.duckduckgo.app.bookmarks.ui.BookmarksViewModel
+import com.duckduckgo.app.browser.*
+import com.duckduckgo.app.browser.addToHome.AddToHomeCapabilityDetector
+import com.duckduckgo.app.browser.defaultBrowsing.DefaultBrowserDetector
+import com.duckduckgo.app.browser.favicon.FaviconDownloader
+import com.duckduckgo.app.browser.omnibar.QueryUrlConverter
+import com.duckduckgo.app.browser.session.WebViewSessionStorage
+import com.duckduckgo.app.feedback.api.FeedbackSender
+import com.duckduckgo.app.feedback.db.SurveyDao
+import com.duckduckgo.app.feedback.ui.FeedbackViewModel
+import com.duckduckgo.app.feedback.ui.SurveyViewModel
+import com.duckduckgo.app.global.db.AppConfigurationDao
+import com.duckduckgo.app.global.install.AppInstallStore
+import com.duckduckgo.app.global.model.SiteFactory
+import com.duckduckgo.app.launch.LaunchViewModel
+import com.duckduckgo.app.onboarding.store.OnboardingStore
+import com.duckduckgo.app.onboarding.ui.OnboardingViewModel
+import com.duckduckgo.app.privacy.db.NetworkLeaderboardDao
+import com.duckduckgo.app.privacy.store.PrivacySettingsSharedPreferences
+import com.duckduckgo.app.privacy.ui.PrivacyDashboardViewModel
+import com.duckduckgo.app.privacy.ui.PrivacyPracticesViewModel
+import com.duckduckgo.app.privacy.ui.ScorecardViewModel
+import com.duckduckgo.app.privacy.ui.TrackerNetworksViewModel
+import com.duckduckgo.app.settings.SettingsViewModel
+import com.duckduckgo.app.settings.db.SettingsDataStore
+import com.duckduckgo.app.statistics.VariantManager
+import com.duckduckgo.app.statistics.api.StatisticsUpdater
+import com.duckduckgo.app.statistics.pixels.Pixel
+import com.duckduckgo.app.statistics.store.StatisticsDataStore
+import com.duckduckgo.app.tabs.model.TabRepository
+import com.duckduckgo.app.tabs.ui.TabSwitcherViewModel
+import javax.inject.Inject
+
+
+@Suppress(&quot;UNCHECKED_CAST&quot;)
+<span class="nc" id="L58">class ViewModelFactory @Inject constructor(</span>
+    private val statisticsUpdater: StatisticsUpdater,
+    private val statisticsStore: StatisticsDataStore,
+    private val onboaringStore: OnboardingStore,
+    private val appInstallStore: AppInstallStore,
+    private val queryUrlConverter: QueryUrlConverter,
+    private val duckDuckGoUrlDetector: DuckDuckGoUrlDetector,
+    private val tabRepository: TabRepository,
+    private val privacySettingsStore: PrivacySettingsSharedPreferences,
+    private val siteFactory: SiteFactory,
+    private val appConfigurationDao: AppConfigurationDao,
+    private val networkLeaderboardDao: NetworkLeaderboardDao,
+    private val bookmarksDao: BookmarksDao,
+    private val surveyDao: SurveyDao,
+    private val autoCompleteApi: AutoCompleteApi,
+    private val appSettingsPreferencesStore: SettingsDataStore,
+    private val webViewLongPressHandler: LongPressHandler,
+    private val defaultBrowserDetector: DefaultBrowserDetector,
+    private val variantManager: VariantManager,
+    private val feedbackSender: FeedbackSender,
+    private val webViewSessionStorage: WebViewSessionStorage,
+    private val specialUrlDetector: SpecialUrlDetector,
+    private val faviconDownloader: FaviconDownloader,
+    private val addToHomeCapabilityDetector: AddToHomeCapabilityDetector,
+    private val pixel: Pixel
+
+<span class="nc" id="L84">) : ViewModelProvider.NewInstanceFactory() {</span>
+
+    override fun &lt;T : ViewModel&gt; create(modelClass: Class&lt;T&gt;) =
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        with(modelClass) {</span>
+            when {
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                isAssignableFrom(LaunchViewModel::class.java) -&gt; LaunchViewModel(onboaringStore)</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">                isAssignableFrom(OnboardingViewModel::class.java) -&gt; OnboardingViewModel(onboaringStore, defaultBrowserDetector)</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                isAssignableFrom(BrowserViewModel::class.java) -&gt; BrowserViewModel(tabRepository, queryUrlConverter)</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                isAssignableFrom(BrowserTabViewModel::class.java) -&gt; browserTabViewModel()</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">                isAssignableFrom(TabSwitcherViewModel::class.java) -&gt; TabSwitcherViewModel(tabRepository, webViewSessionStorage)</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                isAssignableFrom(PrivacyDashboardViewModel::class.java) -&gt; PrivacyDashboardViewModel(</span>
+<span class="nc" id="L95">                    privacySettingsStore,</span>
+<span class="nc" id="L96">                    networkLeaderboardDao,</span>
+<span class="nc" id="L97">                    pixel</span>
+                )
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                isAssignableFrom(ScorecardViewModel::class.java) -&gt; ScorecardViewModel(privacySettingsStore)</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                isAssignableFrom(TrackerNetworksViewModel::class.java) -&gt; TrackerNetworksViewModel()</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                isAssignableFrom(PrivacyPracticesViewModel::class.java) -&gt; PrivacyPracticesViewModel()</span>
+<span class="nc bnc" id="L102" title="All 2 branches missed.">                isAssignableFrom(FeedbackViewModel::class.java) -&gt; FeedbackViewModel(feedbackSender)</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">                isAssignableFrom(SurveyViewModel::class.java) -&gt; SurveyViewModel(surveyDao, statisticsStore, appInstallStore)</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">                isAssignableFrom(SettingsViewModel::class.java) -&gt; SettingsViewModel(</span>
+<span class="nc" id="L105">                    appSettingsPreferencesStore,</span>
+<span class="nc" id="L106">                    defaultBrowserDetector,</span>
+<span class="nc" id="L107">                    variantManager,</span>
+<span class="nc" id="L108">                    pixel</span>
+                )
+<span class="nc bnc" id="L110" title="All 2 branches missed.">                isAssignableFrom(BookmarksViewModel::class.java) -&gt; BookmarksViewModel(bookmarksDao)</span>
+<span class="nc" id="L111">                else -&gt; throw IllegalArgumentException(&quot;Unknown ViewModel class: ${modelClass.name}&quot;)</span>
+<span class="nc" id="L112">            }</span>
+<span class="nc" id="L113">        } as T</span>
+
+<span class="nc" id="L115">    private fun browserTabViewModel(): ViewModel = BrowserTabViewModel(</span>
+<span class="nc" id="L116">        statisticsUpdater = statisticsUpdater,</span>
+<span class="nc" id="L117">        queryUrlConverter = queryUrlConverter,</span>
+<span class="nc" id="L118">        duckDuckGoUrlDetector = duckDuckGoUrlDetector,</span>
+<span class="nc" id="L119">        siteFactory = siteFactory,</span>
+<span class="nc" id="L120">        tabRepository = tabRepository,</span>
+<span class="nc" id="L121">        networkLeaderboardDao = networkLeaderboardDao,</span>
+<span class="nc" id="L122">        bookmarksDao = bookmarksDao,</span>
+<span class="nc" id="L123">        appSettingsPreferencesStore = appSettingsPreferencesStore,</span>
+<span class="nc" id="L124">        appConfigurationDao = appConfigurationDao,</span>
+<span class="nc" id="L125">        longPressHandler = webViewLongPressHandler,</span>
+<span class="nc" id="L126">        webViewSessionStorage = webViewSessionStorage,</span>
+<span class="nc" id="L127">        autoCompleteApi = autoCompleteApi,</span>
+<span class="nc" id="L128">        specialUrlDetector = specialUrlDetector,</span>
+<span class="nc" id="L129">        faviconDownloader = faviconDownloader,</span>
+<span class="nc" id="L130">        addToHomeCapabilityDetector = addToHomeCapabilityDetector,</span>
+<span class="nc" id="L131">        surveyDao = surveyDao,</span>
+<span class="nc" id="L132">        appInstallStore = appInstallStore</span>
+<span class="nc" id="L133">    )</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

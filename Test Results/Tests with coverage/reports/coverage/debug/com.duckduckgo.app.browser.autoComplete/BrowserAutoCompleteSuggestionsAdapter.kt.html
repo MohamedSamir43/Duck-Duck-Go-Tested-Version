@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BrowserAutoCompleteSuggestionsAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser.autoComplete</a> &gt; <span class="el_source">BrowserAutoCompleteSuggestionsAdapter.kt</span></div><h1>BrowserAutoCompleteSuggestionsAdapter.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser.autoComplete
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.annotation.UiThread
+import androidx.recyclerview.widget.RecyclerView
+import com.duckduckgo.app.autocomplete.api.AutoCompleteApi.AutoCompleteSuggestion
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.browser.autoComplete.BrowserAutoCompleteSuggestionsAdapter.AutoCompleteViewHolder
+import com.duckduckgo.app.browser.autoComplete.BrowserAutoCompleteSuggestionsAdapter.AutoCompleteViewHolder.EmptySuggestionViewHolder
+import com.duckduckgo.app.browser.autoComplete.BrowserAutoCompleteSuggestionsAdapter.AutoCompleteViewHolder.SuggestionViewHolder
+import kotlinx.android.synthetic.main.item_autocomplete_suggestion.view.*
+import javax.inject.Inject
+
+<span class="nc" id="L32">class BrowserAutoCompleteSuggestionsAdapter @Inject constructor(</span>
+    private val immediateSearchClickListener: (AutoCompleteSuggestion) -&gt; Unit,
+    private val editableSearchClickListener: (AutoCompleteSuggestion) -&gt; Unit
+<span class="nc" id="L35">) : RecyclerView.Adapter&lt;AutoCompleteViewHolder&gt;() {</span>
+
+<span class="nc" id="L37">    private val suggestions: MutableList&lt;AutoCompleteSuggestion&gt; = ArrayList()</span>
+
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AutoCompleteViewHolder {
+
+<span class="nc" id="L42">        val inflater = LayoutInflater.from(parent.context)</span>
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        return if (suggestions.isEmpty()) {</span>
+<span class="nc" id="L45">            EmptySuggestionViewHolder(inflater.inflate(R.layout.item_autocomplete_no_suggestions, parent, false))</span>
+        } else {
+<span class="nc" id="L47">            SuggestionViewHolder(inflater.inflate(R.layout.item_autocomplete_suggestion, parent, false))</span>
+        }
+    }
+
+    override fun getItemViewType(position: Int): Int {
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (suggestions.isEmpty()) {</span>
+<span class="nc" id="L53">            return EMPTY_TYPE</span>
+        }
+
+<span class="nc" id="L56">        return SUGGESTION_TYPE</span>
+    }
+
+    override fun onBindViewHolder(holder: AutoCompleteViewHolder, position: Int) {
+<span class="nc" id="L60">        when (holder) {</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            is EmptySuggestionViewHolder -&gt; {</span>
+                // nothing required
+            }
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            is SuggestionViewHolder -&gt; {</span>
+<span class="nc" id="L65">                val suggestion = suggestions[position]</span>
+<span class="nc" id="L66">                holder.bind(suggestion, immediateSearchClickListener, editableSearchClickListener)</span>
+            }
+        }
+<span class="nc" id="L69">    }</span>
+
+    override fun getItemCount(): Int {
+<span class="nc bnc" id="L72" title="All 4 branches missed.">        if (suggestions.isNotEmpty()) {</span>
+<span class="nc" id="L73">            return suggestions.size</span>
+        }
+
+        // if there are no suggestions, we'll use a recycler row to display &quot;no suggestions&quot;
+<span class="nc" id="L77">        return 1</span>
+    }
+
+    @UiThread
+    fun updateData(newSuggestions: List&lt;AutoCompleteSuggestion&gt;) {
+<span class="nc" id="L82">        suggestions.clear()</span>
+<span class="nc" id="L83">        suggestions.addAll(newSuggestions)</span>
+<span class="nc" id="L84">        notifyDataSetChanged()</span>
+<span class="nc" id="L85">    }</span>
+
+<span class="nc" id="L87">    sealed class AutoCompleteViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {</span>
+
+<span class="nc" id="L89">        class SuggestionViewHolder(itemView: View) : AutoCompleteViewHolder(itemView) {</span>
+            fun bind(
+                item: AutoCompleteSuggestion,
+                immediateSearchListener: (AutoCompleteSuggestion) -&gt; Unit,
+                editableSearchClickListener: (AutoCompleteSuggestion) -&gt; Unit
+<span class="nc" id="L94">            ) = with(itemView) {</span>
+
+<span class="nc" id="L96">                phrase.text = item.phrase</span>
+
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                val phraseOrUrlImage = if (item.isUrl) R.drawable.ic_globe_24dp else R.drawable.ic_loupe_24dp</span>
+<span class="nc" id="L99">                phraseOrUrlIndicator.setImageResource(phraseOrUrlImage)</span>
+
+<span class="nc" id="L101">                editQueryImage.setOnClickListener { editableSearchClickListener(item) }</span>
+<span class="nc" id="L102">                setOnClickListener { immediateSearchListener(item) }</span>
+<span class="nc" id="L103">            }</span>
+        }
+
+<span class="nc" id="L106">        class EmptySuggestionViewHolder(itemView: View) : AutoCompleteViewHolder(itemView)</span>
+    }
+
+<span class="nc" id="L109">    companion object {</span>
+        private const val EMPTY_TYPE = 1
+        private const val SUGGESTION_TYPE = 2
+    }
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

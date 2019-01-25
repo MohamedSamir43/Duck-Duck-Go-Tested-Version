@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WebViewRequestInterceptor.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser</a> &gt; <span class="el_source">WebViewRequestInterceptor.kt</span></div><h1>WebViewRequestInterceptor.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser
+
+import androidx.annotation.WorkerThread
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
+import android.webkit.WebView
+import com.duckduckgo.app.global.isHttp
+import com.duckduckgo.app.httpsupgrade.HttpsUpgrader
+import com.duckduckgo.app.privacy.model.TrustedSites
+import com.duckduckgo.app.surrogates.ResourceSurrogates
+import com.duckduckgo.app.trackerdetection.TrackerDetector
+import com.duckduckgo.app.trackerdetection.model.ResourceType
+import timber.log.Timber
+
+interface RequestInterceptor {
+
+    @WorkerThread
+    fun shouldIntercept(
+        request: WebResourceRequest,
+        webView: WebView,
+        currentUrl: String?,
+        webViewClientListener: WebViewClientListener?
+    ): WebResourceResponse?
+}
+
+<span class="nc" id="L42">class WebViewRequestInterceptor(</span>
+    private val resourceSurrogates: ResourceSurrogates,
+    private val trackerDetector: TrackerDetector,
+    private val httpsUpgrader: HttpsUpgrader
+) : RequestInterceptor {
+
+    /**
+     * Notify the application of a resource request and allow the application to return the data.
+     *
+     * If the return value is null, the WebView will continue to load the resource as usual.
+     * Otherwise, the return response and data will be used.
+     *
+     * NOTE: This method is called on a thread other than the UI thread so clients should exercise
+     * caution when accessing private data or the view system.
+     */
+    @WorkerThread
+    override fun shouldIntercept(
+        request: WebResourceRequest,
+        webView: WebView,
+        currentUrl: String?,
+        webViewClientListener: WebViewClientListener?
+    ): WebResourceResponse? {
+<span class="nc" id="L64">        val url = request.url</span>
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (shouldUpgrade(request)) {</span>
+<span class="nc" id="L67">            val newUri = httpsUpgrader.upgrade(url)</span>
+<span class="nc" id="L68">            webView.post { webView.loadUrl(newUri.toString()) }</span>
+<span class="nc" id="L69">            return WebResourceResponse(null, null, null)</span>
+        }
+
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        val documentUrl = currentUrl ?: return null</span>
+
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        if (TrustedSites.isTrusted(documentUrl)) {</span>
+<span class="nc" id="L75">            return null</span>
+        }
+
+<span class="nc bnc" id="L78" title="All 4 branches missed.">        if (url != null &amp;&amp; url.isHttp) {</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            webViewClientListener?.pageHasHttpResources(documentUrl)</span>
+        }
+
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (shouldBlock(request, documentUrl, webViewClientListener)) {</span>
+
+<span class="nc" id="L84">            val surrogate = resourceSurrogates.get(url)</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            if (surrogate.responseAvailable) {</span>
+<span class="nc" id="L86">                Timber.d(&quot;Surrogate found for $url&quot;)</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                return WebResourceResponse(surrogate.mimeType, &quot;UTF-8&quot;, surrogate.jsFunction.byteInputStream())</span>
+            }
+
+<span class="nc" id="L90">            Timber.d(&quot;Blocking request $url&quot;)</span>
+<span class="nc" id="L91">            return WebResourceResponse(null, null, null)</span>
+        }
+
+<span class="nc" id="L94">        return null</span>
+    }
+
+    private fun shouldUpgrade(request: WebResourceRequest) =
+<span class="nc bnc" id="L98" title="All 6 branches missed.">        request.isForMainFrame &amp;&amp; request.url != null &amp;&amp; httpsUpgrader.shouldUpgrade(request.url)</span>
+
+    private fun shouldBlock(request: WebResourceRequest, documentUrl: String?, webViewClientListener: WebViewClientListener?): Boolean {
+<span class="nc" id="L101">        val url = request.url.toString()</span>
+
+<span class="nc bnc" id="L103" title="All 4 branches missed.">        if (request.isForMainFrame || documentUrl == null) {</span>
+<span class="nc" id="L104">            return false</span>
+        }
+
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        val trackingEvent = trackerDetector.evaluate(url, documentUrl, ResourceType.from(request)) ?: return false</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        webViewClientListener?.trackerDetected(trackingEvent)</span>
+<span class="nc" id="L109">        return trackingEvent.blocked</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NetworkModule.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.di</a> &gt; <span class="el_source">NetworkModule.kt</span></div><h1>NetworkModule.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.di
+
+import android.app.job.JobScheduler
+import android.content.Context
+import com.duckduckgo.app.autocomplete.api.AutoCompleteService
+import com.duckduckgo.app.entities.api.EntityListService
+import com.duckduckgo.app.feedback.api.FeedbackSender
+import com.duckduckgo.app.feedback.api.FeedbackService
+import com.duckduckgo.app.feedback.api.FeedbackSubmitter
+import com.duckduckgo.app.feedback.api.SurveyService
+import com.duckduckgo.app.global.AppUrl.Url
+import com.duckduckgo.app.global.api.ApiRequestInterceptor
+import com.duckduckgo.app.global.job.JobBuilder
+import com.duckduckgo.app.httpsupgrade.api.HttpsUpgradeService
+import com.duckduckgo.app.job.AppConfigurationSyncer
+import com.duckduckgo.app.job.ConfigurationDownloader
+import com.duckduckgo.app.statistics.VariantManager
+import com.duckduckgo.app.statistics.store.StatisticsDataStore
+import com.duckduckgo.app.surrogates.api.ResourceSurrogateListService
+import com.duckduckgo.app.trackerdetection.api.TrackerListService
+import com.squareup.moshi.Moshi
+import dagger.Module
+import dagger.Provides
+import okhttp3.Cache
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
+import retrofit2.converter.moshi.MoshiConverterFactory
+import javax.inject.Named
+import javax.inject.Singleton
+
+
+@Module
+<span class="fc" id="L50">class NetworkModule {</span>
+
+    @Provides
+    @Singleton
+    @Named(&quot;api&quot;)
+    fun apiOkHttpClient(context: Context, apiRequestInterceptor: ApiRequestInterceptor): OkHttpClient {
+<span class="fc" id="L56">        val cache = Cache(context.cacheDir, CACHE_SIZE)</span>
+<span class="fc" id="L57">        return OkHttpClient.Builder()</span>
+<span class="fc" id="L58">            .addInterceptor(apiRequestInterceptor)</span>
+<span class="fc" id="L59">            .cache(cache)</span>
+<span class="fc" id="L60">            .build()</span>
+    }
+
+    @Provides
+    @Singleton
+    @Named(&quot;pixel&quot;)
+    fun pixelOkHttpClient(apiRequestInterceptor: ApiRequestInterceptor): OkHttpClient {
+<span class="nc" id="L67">        return OkHttpClient.Builder()</span>
+<span class="nc" id="L68">            .addInterceptor(apiRequestInterceptor)</span>
+<span class="nc" id="L69">            .build()</span>
+    }
+
+    @Provides
+    @Singleton
+    @Named(&quot;api&quot;)
+    fun apiRetrofit(@Named(&quot;api&quot;) okHttpClient: OkHttpClient, moshi: Moshi): Retrofit {
+<span class="fc" id="L76">        return Retrofit.Builder()</span>
+<span class="fc" id="L77">            .baseUrl(Url.API)</span>
+<span class="fc" id="L78">            .client(okHttpClient)</span>
+<span class="fc" id="L79">            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())</span>
+<span class="fc" id="L80">            .addConverterFactory(MoshiConverterFactory.create(moshi))</span>
+<span class="fc" id="L81">            .build()</span>
+    }
+
+    @Provides
+    @Singleton
+    @Named(&quot;pixel&quot;)
+    fun pixelRetrofit(@Named(&quot;pixel&quot;) okHttpClient: OkHttpClient): Retrofit {
+<span class="nc" id="L88">        return Retrofit.Builder()</span>
+<span class="nc" id="L89">            .baseUrl(Url.PIXEL)</span>
+<span class="nc" id="L90">            .client(okHttpClient)</span>
+<span class="nc" id="L91">            .addCallAdapterFactory(RxJava2CallAdapterFactory.create())</span>
+<span class="nc" id="L92">            .build()</span>
+    }
+
+    @Provides
+    fun apiRequestInterceptor(context: Context): ApiRequestInterceptor {
+<span class="fc" id="L97">        return ApiRequestInterceptor(context)</span>
+    }
+
+    @Provides
+    fun trackerListService(@Named(&quot;api&quot;) retrofit: Retrofit): TrackerListService =
+<span class="nc" id="L102">        retrofit.create(TrackerListService::class.java)</span>
+
+    @Provides
+    fun httpsUpgradeService(@Named(&quot;api&quot;) retrofit: Retrofit): HttpsUpgradeService =
+<span class="nc" id="L106">        retrofit.create(HttpsUpgradeService::class.java)</span>
+
+    @Provides
+    fun autoCompleteService(@Named(&quot;api&quot;) retrofit: Retrofit): AutoCompleteService =
+<span class="nc" id="L110">        retrofit.create(AutoCompleteService::class.java)</span>
+
+    @Provides
+    fun surrogatesService(@Named(&quot;api&quot;) retrofit: Retrofit): ResourceSurrogateListService =
+<span class="nc" id="L114">        retrofit.create(ResourceSurrogateListService::class.java)</span>
+
+    @Provides
+    fun feedbackService(@Named(&quot;api&quot;) retrofit: Retrofit): FeedbackService =
+<span class="nc" id="L118">        retrofit.create(FeedbackService::class.java)</span>
+
+    @Provides
+    fun entityListService(@Named(&quot;api&quot;) retrofit: Retrofit): EntityListService =
+<span class="nc" id="L122">        retrofit.create(EntityListService::class.java)</span>
+
+    @Provides
+    fun feedbackSender(statisticsStore: StatisticsDataStore, variantManager: VariantManager, feedbackSerice: FeedbackService): FeedbackSender =
+<span class="nc" id="L126">        FeedbackSubmitter(statisticsStore, variantManager, feedbackSerice)</span>
+
+    @Provides
+    fun surveyService(@Named(&quot;api&quot;) retrofit: Retrofit): SurveyService =
+<span class="nc" id="L130">        retrofit.create(SurveyService::class.java)</span>
+
+    @Provides
+    @Singleton
+    fun appConfigurationSyncer(
+        jobBuilder: JobBuilder,
+        jobScheduler: JobScheduler,
+        appConfigurationDownloader: ConfigurationDownloader
+    ): AppConfigurationSyncer {
+<span class="fc" id="L139">        return AppConfigurationSyncer(jobBuilder, jobScheduler, appConfigurationDownloader)</span>
+    }
+
+<span class="fc" id="L142">    companion object {</span>
+        private const val CACHE_SIZE: Long = 10 * 1024 * 1024 // 10MB
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

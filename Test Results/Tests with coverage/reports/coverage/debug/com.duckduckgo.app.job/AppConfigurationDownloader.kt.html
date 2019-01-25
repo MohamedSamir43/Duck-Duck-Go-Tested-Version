@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AppConfigurationDownloader.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.job</a> &gt; <span class="el_source">AppConfigurationDownloader.kt</span></div><h1>AppConfigurationDownloader.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.job
+
+import com.duckduckgo.app.entities.api.EntityListDownloader
+import com.duckduckgo.app.feedback.api.SurveyDownloader
+import com.duckduckgo.app.global.db.AppConfigurationEntity
+import com.duckduckgo.app.global.db.AppDatabase
+import com.duckduckgo.app.httpsupgrade.api.HttpsUpgradeDataDownloader
+import com.duckduckgo.app.surrogates.api.ResourceSurrogateListDownloader
+import com.duckduckgo.app.trackerdetection.Client.ClientName.*
+import com.duckduckgo.app.trackerdetection.api.TrackerDataDownloader
+import io.reactivex.Completable
+import timber.log.Timber
+
+interface ConfigurationDownloader {
+    fun downloadTask(): Completable
+}
+
+<span class="nc" id="L34">class AppConfigurationDownloader(</span>
+    private val trackerDataDownloader: TrackerDataDownloader,
+    private val httpsUpgradeDataDownloader: HttpsUpgradeDataDownloader,
+    private val resourceSurrogateDownloader: ResourceSurrogateListDownloader,
+    private val entityListDownloader: EntityListDownloader,
+    private val surveyDownloader: SurveyDownloader,
+    private val appDatabase: AppDatabase
+) : ConfigurationDownloader {
+
+    override fun downloadTask(): Completable {
+<span class="nc" id="L44">        val easyListDownload = trackerDataDownloader.downloadList(EASYLIST)</span>
+<span class="nc" id="L45">        val easyPrivacyDownload = trackerDataDownloader.downloadList(EASYPRIVACY)</span>
+<span class="nc" id="L46">        val trackersWhitelist = trackerDataDownloader.downloadList(TRACKERSWHITELIST)</span>
+<span class="nc" id="L47">        val disconnectDownload = trackerDataDownloader.downloadList(DISCONNECT)</span>
+<span class="nc" id="L48">        val entityListDownload = entityListDownloader.download()</span>
+<span class="nc" id="L49">        val surrogatesDownload = resourceSurrogateDownloader.downloadList()</span>
+<span class="nc" id="L50">        val httpsUpgradeDownload = httpsUpgradeDataDownloader.download()</span>
+<span class="nc" id="L51">        val httpStatisticsReport = httpsUpgradeDataDownloader.reportUpgradeStatistics()</span>
+<span class="nc" id="L52">        val surveyDownload = surveyDownloader.download()</span>
+
+<span class="nc" id="L54">        return Completable.mergeDelayError(</span>
+<span class="nc" id="L55">            listOf(</span>
+<span class="nc" id="L56">                easyListDownload,</span>
+<span class="nc" id="L57">                easyPrivacyDownload,</span>
+<span class="nc" id="L58">                trackersWhitelist,</span>
+<span class="nc" id="L59">                disconnectDownload,</span>
+<span class="nc" id="L60">                entityListDownload,</span>
+<span class="nc" id="L61">                surrogatesDownload,</span>
+<span class="nc" id="L62">                httpsUpgradeDownload,</span>
+<span class="nc" id="L63">                httpStatisticsReport,</span>
+<span class="nc" id="L64">                surveyDownload</span>
+            )
+<span class="nc" id="L66">        ).doOnComplete {</span>
+<span class="nc" id="L67">            Timber.i(&quot;Download task completed successfully&quot;)</span>
+<span class="nc" id="L68">            val appConfiguration = AppConfigurationEntity(appConfigurationDownloaded = true)</span>
+<span class="nc" id="L69">            appDatabase.appConfigurationDao().configurationDownloadSuccessful(appConfiguration)</span>
+<span class="nc" id="L70">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

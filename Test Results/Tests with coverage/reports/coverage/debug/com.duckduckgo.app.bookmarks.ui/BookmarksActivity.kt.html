@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BookmarksActivity.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.bookmarks.ui</a> &gt; <span class="el_source">BookmarksActivity.kt</span></div><h1>BookmarksActivity.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.bookmarks.ui
+
+import android.app.AlertDialog
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.text.Html
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.PopupMenu
+import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView.*
+import com.duckduckgo.app.bookmarks.db.BookmarkEntity
+import com.duckduckgo.app.browser.BrowserActivity
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.global.DuckDuckGoActivity
+import com.duckduckgo.app.global.baseHost
+import com.duckduckgo.app.global.faviconLocation
+import com.duckduckgo.app.global.image.GlideApp
+import com.duckduckgo.app.global.view.gone
+import com.duckduckgo.app.global.view.show
+import kotlinx.android.synthetic.main.content_bookmarks.*
+import kotlinx.android.synthetic.main.include_toolbar.*
+import kotlinx.android.synthetic.main.view_bookmark_entry.view.*
+import org.jetbrains.anko.alert
+import timber.log.Timber
+
+<span class="nc" id="L48">class BookmarksActivity : DuckDuckGoActivity() {</span>
+
+<span class="nc bnc" id="L50" title="All 2 branches missed.">    lateinit var adapter: BookmarksAdapter</span>
+    private var deleteDialog: AlertDialog? = null
+
+<span class="nc" id="L53">    private val viewModel: BookmarksViewModel by bindViewModel()</span>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L56">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L57">        setContentView(R.layout.activity_bookmarks)</span>
+<span class="nc" id="L58">        setupActionBar()</span>
+<span class="nc" id="L59">        setupBookmarksRecycler()</span>
+<span class="nc" id="L60">        observeViewModel()</span>
+<span class="nc" id="L61">    }</span>
+
+    private fun setupBookmarksRecycler() {
+<span class="nc" id="L64">        adapter = BookmarksAdapter(applicationContext, viewModel)</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        recycler.adapter = adapter</span>
+
+<span class="nc" id="L67">        val separator = DividerItemDecoration(this, VERTICAL)</span>
+<span class="nc" id="L68">        recycler.addItemDecoration(separator)</span>
+<span class="nc" id="L69">    }</span>
+
+    private fun setupActionBar() {
+<span class="nc" id="L72">        setSupportActionBar(toolbar)</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        supportActionBar?.setDisplayHomeAsUpEnabled(true)</span>
+<span class="nc" id="L74">    }</span>
+
+    private fun observeViewModel() {
+<span class="nc" id="L77">        viewModel.viewState.observe(this, Observer&lt;BookmarksViewModel.ViewState&gt; { viewState -&gt;</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            viewState?.let {</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                if (it.showBookmarks) showBookmarks() else hideBookmarks()</span>
+<span class="nc" id="L80">                adapter.bookmarks = it.bookmarks</span>
+<span class="nc" id="L81">            }</span>
+<span class="nc" id="L82">        })</span>
+
+<span class="nc" id="L84">        viewModel.command.observe(this, Observer {</span>
+<span class="nc" id="L85">            when (it) {</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                is BookmarksViewModel.Command.ConfirmDeleteBookmark -&gt; confirmDeleteBookmark(it.bookmark)</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                is BookmarksViewModel.Command.OpenBookmark -&gt; openBookmark(it.bookmark)</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">                is BookmarksViewModel.Command.ShowEditBookmark -&gt; showEditBookmarkDialog(it.bookmark)</span>
+            }
+<span class="nc" id="L90">        })</span>
+<span class="nc" id="L91">    }</span>
+
+    private fun showEditBookmarkDialog(bookmark: BookmarkEntity) {
+<span class="nc" id="L94">        val dialog = SaveBookmarkDialogFragment.createDialogEditingMode(bookmark)</span>
+<span class="nc" id="L95">        dialog.show(supportFragmentManager, EDIT_BOOKMARK_FRAGMENT_TAG)</span>
+<span class="nc" id="L96">        dialog.listener = viewModel</span>
+<span class="nc" id="L97">    }</span>
+
+    private fun showBookmarks() {
+<span class="nc" id="L100">        recycler.show()</span>
+<span class="nc" id="L101">        emptyBookmarks.gone()</span>
+<span class="nc" id="L102">    }</span>
+
+    private fun hideBookmarks() {
+<span class="nc" id="L105">        recycler.gone()</span>
+<span class="nc" id="L106">        emptyBookmarks.show()</span>
+<span class="nc" id="L107">    }</span>
+
+    private fun openBookmark(bookmark: BookmarkEntity) {
+<span class="nc" id="L110">        startActivity(BrowserActivity.intent(this, bookmark.url))</span>
+<span class="nc" id="L111">        finish()</span>
+<span class="nc" id="L112">    }</span>
+
+    @Suppress(&quot;deprecation&quot;)
+    private fun confirmDeleteBookmark(bookmark: BookmarkEntity) {
+<span class="nc" id="L116">        val message =</span>
+<span class="nc" id="L117">            Html.fromHtml(getString(R.string.bookmarkDeleteConfirmMessage, bookmark.title))</span>
+<span class="nc" id="L118">        val title = getString(R.string.bookmarkDeleteConfirmTitle)</span>
+<span class="nc" id="L119">        deleteDialog = alert(message, title) {</span>
+<span class="nc" id="L120">            positiveButton(android.R.string.yes) { delete(bookmark) }</span>
+<span class="nc" id="L121">            negativeButton(android.R.string.no) { }</span>
+<span class="nc" id="L122">        }.build()</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        deleteDialog?.show()</span>
+<span class="nc" id="L124">    }</span>
+
+    private fun delete(bookmark: BookmarkEntity) {
+<span class="nc" id="L127">        viewModel.delete(bookmark)</span>
+<span class="nc" id="L128">    }</span>
+
+    override fun onDestroy() {
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        deleteDialog?.dismiss()</span>
+<span class="nc" id="L132">        super.onDestroy()</span>
+<span class="nc" id="L133">    }</span>
+
+<span class="nc" id="L135">    companion object {</span>
+        fun intent(context: Context): Intent {
+<span class="nc" id="L137">            return Intent(context, BookmarksActivity::class.java)</span>
+        }
+
+        // Fragment Tags
+        private const val EDIT_BOOKMARK_FRAGMENT_TAG = &quot;EDIT_BOOKMARK&quot;
+    }
+
+<span class="nc" id="L144">    class BookmarksAdapter(</span>
+        private val context: Context,
+        private val viewModel: BookmarksViewModel
+<span class="nc" id="L147">    ) : Adapter&lt;BookmarksViewHolder&gt;() {</span>
+
+<span class="nc" id="L149">        var bookmarks: List&lt;BookmarkEntity&gt; = emptyList()</span>
+            set(value) {
+<span class="nc" id="L151">                field = value</span>
+<span class="nc" id="L152">                notifyDataSetChanged()</span>
+<span class="nc" id="L153">            }</span>
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BookmarksViewHolder {
+<span class="nc" id="L156">            val inflater = LayoutInflater.from(parent.context)</span>
+<span class="nc" id="L157">            val view = inflater.inflate(R.layout.view_bookmark_entry, parent, false)</span>
+<span class="nc" id="L158">            return BookmarksViewHolder(view, viewModel)</span>
+        }
+
+        override fun onBindViewHolder(holder: BookmarksViewHolder, position: Int) {
+<span class="nc" id="L162">            holder.update(bookmarks[position])</span>
+<span class="nc" id="L163">        }</span>
+
+        override fun getItemCount(): Int {
+<span class="nc" id="L166">            return bookmarks.size</span>
+        }
+    }
+
+<span class="nc" id="L170">    class BookmarksViewHolder(itemView: View, private val viewModel: BookmarksViewModel) :</span>
+<span class="nc" id="L171">        ViewHolder(itemView) {</span>
+
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        lateinit var bookmark: BookmarkEntity</span>
+
+        fun update(bookmark: BookmarkEntity) {
+<span class="nc" id="L176">            this.bookmark = bookmark</span>
+
+<span class="nc" id="L178">            itemView.overflowMenu.contentDescription = itemView.context.getString(</span>
+<span class="nc" id="L179">                R.string.bookmarkOverflowContentDescription,</span>
+<span class="nc" id="L180">                bookmark.title</span>
+            )
+
+<span class="nc" id="L183">            itemView.title.text = bookmark.title</span>
+<span class="nc" id="L184">            itemView.url.text = parseDisplayUrl(bookmark.url)</span>
+<span class="nc" id="L185">            loadFavicon(bookmark.url)</span>
+
+<span class="nc" id="L187">            itemView.overflowMenu.setOnClickListener {</span>
+<span class="nc" id="L188">                showOverFlowMenu(itemView.overflowMenu, bookmark)</span>
+<span class="nc" id="L189">            }</span>
+
+<span class="nc" id="L191">            itemView.setOnClickListener {</span>
+<span class="nc" id="L192">                viewModel.onSelected(bookmark)</span>
+<span class="nc" id="L193">            }</span>
+<span class="nc" id="L194">        }</span>
+
+        private fun loadFavicon(url: String) {
+<span class="nc" id="L197">            val faviconUrl = Uri.parse(url).faviconLocation()</span>
+
+<span class="nc" id="L199">            GlideApp.with(itemView)</span>
+<span class="nc" id="L200">                .load(faviconUrl)</span>
+<span class="nc" id="L201">                .placeholder(R.drawable.ic_globe_gray_16dp)</span>
+<span class="nc" id="L202">                .error(R.drawable.ic_globe_gray_16dp)</span>
+<span class="nc" id="L203">                .into(itemView.favicon)</span>
+<span class="nc" id="L204">        }</span>
+
+        private fun parseDisplayUrl(urlString: String): String {
+<span class="nc" id="L207">            val uri = Uri.parse(urlString)</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">            return uri.baseHost ?: return urlString</span>
+        }
+
+        private fun showOverFlowMenu(overflowMenu: ImageView, bookmark: BookmarkEntity) {
+<span class="nc" id="L212">            val popup = PopupMenu(overflowMenu.context, overflowMenu)</span>
+<span class="nc" id="L213">            popup.inflate(R.menu.bookmarks_individual_overflow_menu)</span>
+<span class="nc" id="L214">            popup.setOnMenuItemClickListener {</span>
+<span class="nc bnc" id="L215" title="All 3 branches missed.">                when (it.itemId) {</span>
+
+                    R.id.edit -&gt; {
+<span class="nc" id="L218">                        editBookmark(bookmark); true</span>
+                    }
+                    R.id.delete -&gt; {
+<span class="nc" id="L221">                        deleteBookmark(bookmark); true</span>
+                    }
+<span class="nc" id="L223">                    else -&gt; false</span>
+
+<span class="nc" id="L225">                }</span>
+            }
+<span class="nc" id="L227">            popup.show()</span>
+<span class="nc" id="L228">        }</span>
+
+
+        private fun editBookmark(bookmark: BookmarkEntity) {
+<span class="nc" id="L232">            Timber.i(&quot;Editing bookmark ${bookmark.title}&quot;)</span>
+<span class="nc" id="L233">            viewModel.onEditBookmarkRequested(bookmark)</span>
+<span class="nc" id="L234">        }</span>
+
+        private fun deleteBookmark(bookmark: BookmarkEntity) {
+<span class="nc" id="L237">            Timber.i(&quot;Deleting bookmark ${bookmark.title}&quot;)</span>
+<span class="nc" id="L238">            viewModel.onDeleteRequested(bookmark)</span>
+<span class="nc" id="L239">        }</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

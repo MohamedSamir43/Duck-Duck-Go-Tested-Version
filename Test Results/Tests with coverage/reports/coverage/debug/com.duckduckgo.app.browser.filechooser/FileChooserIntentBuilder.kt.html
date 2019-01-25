@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileChooserIntentBuilder.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser.filechooser</a> &gt; <span class="el_source">FileChooserIntentBuilder.kt</span></div><h1>FileChooserIntentBuilder.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *  
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser.filechooser
+
+import android.content.Intent
+import android.net.Uri
+import timber.log.Timber
+import javax.inject.Inject
+
+
+<span class="fc" id="L25">class FileChooserIntentBuilder @Inject constructor() {</span>
+
+    fun intent(acceptTypes: Array&lt;String&gt;, canChooseMultiple: Boolean = false): Intent {
+<span class="fc" id="L28">        return Intent(Intent.ACTION_GET_CONTENT).also {</span>
+<span class="fc" id="L29">            it.flags = Intent.FLAG_GRANT_READ_URI_PERMISSION</span>
+<span class="fc" id="L30">            configureSelectableFileTypes(it, acceptTypes)</span>
+<span class="fc" id="L31">            configureAllowMultipleFile(it, canChooseMultiple)</span>
+<span class="fc" id="L32">        }</span>
+    }
+
+    /**
+     * Some apps return data data as `intent.data` value, some in the `intent.clipData`; some use both.
+     *
+     * If a user selects multiple files, then both the `data` and `clipData` might be populated, but we'd want to use `clipData`.
+     * If we inspect `data` first, we might conclude there is only a single file selected. So we look for `clipData` first.
+     *
+     * Empirically, the first value of `clipData` might mirror what is in the `data` value. So if we have any in `clipData`, use
+     * them and return early.
+     *
+     * Order is important;
+     *     we want to use the clip data if it exists.
+     *     failing that, we check `data` value`.
+     *     failing that, we bail.
+     */
+    fun extractSelectedFileUris(intent: Intent): Array&lt;Uri&gt;? {
+
+        // first try to determine if multiple files were selected
+<span class="fc" id="L52">        val clipData = intent.clipData</span>
+<span class="pc bpc" id="L53" title="1 of 4 branches missed.">        if (clipData != null &amp;&amp; clipData.itemCount &gt; 0) {</span>
+<span class="fc" id="L54">            val uris = arrayListOf&lt;Uri&gt;()</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">            for (i in 0 until clipData.itemCount) {</span>
+<span class="fc" id="L56">                uris.add(clipData.getItemAt(i).uri)</span>
+            }
+<span class="fc" id="L58">            return uris.toTypedArray()</span>
+        }
+
+        // next try to determine if a single file was selected
+<span class="fc" id="L62">        val singleFileResult = intent.data</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (singleFileResult != null) {</span>
+<span class="fc" id="L64">            return arrayOf(singleFileResult)</span>
+        }
+
+        // failing that, give up
+<span class="fc" id="L68">        Timber.w(&quot;Failed to extract selected file information&quot;)</span>
+<span class="fc" id="L69">        return null</span>
+    }
+
+    private fun configureSelectableFileTypes(intent: Intent, acceptTypes: Array&lt;String&gt;) {
+<span class="fc" id="L73">        intent.type = &quot;*/*&quot;</span>
+
+<span class="fc" id="L75">        val acceptedMimeTypes = mutableSetOf&lt;String&gt;()</span>
+
+<span class="fc" id="L77">        acceptTypes</span>
+<span class="fc bfc" id="L78" title="All 4 branches covered.">            .filter { it.isNotBlank() }</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            .forEach { acceptedMimeTypes.add(it.toLowerCase()) }</span>
+
+<span class="fc bfc" id="L81" title="All 4 branches covered.">        if (acceptedMimeTypes.isNotEmpty()) {</span>
+<span class="fc" id="L82">            Timber.d(&quot;Selectable file types limited to $acceptedMimeTypes&quot;)</span>
+<span class="fc" id="L83">            intent.putExtra(Intent.EXTRA_MIME_TYPES, acceptedMimeTypes.toTypedArray())</span>
+        } else {
+<span class="fc" id="L85">            Timber.d(&quot;No selectable file type filters applied&quot;)</span>
+        }
+<span class="fc" id="L87">    }</span>
+
+    private fun configureAllowMultipleFile(intent: Intent, canChooseMultiple: Boolean) {
+<span class="fc" id="L90">        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, canChooseMultiple)</span>
+<span class="fc" id="L91">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

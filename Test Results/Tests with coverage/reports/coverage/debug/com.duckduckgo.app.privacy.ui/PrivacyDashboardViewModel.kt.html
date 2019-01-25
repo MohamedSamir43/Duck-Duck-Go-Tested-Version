@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrivacyDashboardViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.privacy.ui</a> &gt; <span class="el_source">PrivacyDashboardViewModel.kt</span></div><h1>PrivacyDashboardViewModel.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.privacy.ui
+
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModel
+import androidx.annotation.VisibleForTesting
+import com.duckduckgo.app.global.model.Site
+import com.duckduckgo.app.privacy.db.NetworkLeaderboardDao
+import com.duckduckgo.app.privacy.db.NetworkLeaderboardDao.NetworkTally
+import com.duckduckgo.app.privacy.model.HttpsStatus
+import com.duckduckgo.app.privacy.model.PrivacyGrade
+import com.duckduckgo.app.privacy.model.PrivacyPractices
+import com.duckduckgo.app.privacy.model.PrivacyPractices.Summary.UNKNOWN
+import com.duckduckgo.app.privacy.model.TermsOfService
+import com.duckduckgo.app.privacy.store.PrivacySettingsStore
+import com.duckduckgo.app.statistics.pixels.Pixel
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelName.PRIVACY_DASHBOARD_OPENED
+
+<span class="fc" id="L36">class PrivacyDashboardViewModel(</span>
+    private val settingsStore: PrivacySettingsStore,
+    networkLeaderboardDao: NetworkLeaderboardDao,
+    pixel: Pixel
+<span class="fc" id="L40">) : ViewModel() {</span>
+
+<span class="fc" id="L42">    data class ViewState(</span>
+<span class="fc" id="L43">        val domain: String,</span>
+<span class="fc" id="L44">        val beforeGrade: PrivacyGrade,</span>
+<span class="fc" id="L45">        val afterGrade: PrivacyGrade,</span>
+<span class="fc" id="L46">        val httpsStatus: HttpsStatus,</span>
+<span class="nc" id="L47">        val trackerCount: Int,</span>
+<span class="fc" id="L48">        val allTrackersBlocked: Boolean,</span>
+<span class="fc" id="L49">        val practices: PrivacyPractices.Summary,</span>
+<span class="nc" id="L50">        val toggleEnabled: Boolean,</span>
+<span class="fc" id="L51">        val showTrackerNetworkLeaderboard: Boolean,</span>
+<span class="fc" id="L52">        val domainsVisited: Int,</span>
+<span class="fc" id="L53">        val trackerNetworkTally: List&lt;NetworkTally&gt;,</span>
+<span class="fc" id="L54">        val shouldReloadPage: Boolean</span>
+    )
+
+<span class="fc" id="L57">    val viewState: MutableLiveData&lt;ViewState&gt; = MutableLiveData()</span>
+    private var site: Site? = null
+
+<span class="fc" id="L60">    private val domainsVisited: LiveData&lt;Int&gt; = networkLeaderboardDao.domainsVisitedCount()</span>
+<span class="pc" id="L61">    private val domainsVisitedObserver = Observer&lt;Int&gt; { onDomainsVisitedChanged(it) }</span>
+<span class="fc" id="L62">    private val trackerNetworkTally: LiveData&lt;List&lt;NetworkTally&gt;&gt; = networkLeaderboardDao.trackerNetworkTally()</span>
+<span class="pc" id="L63">    private val trackerNetworkActivityObserver = Observer&lt;List&lt;NetworkTally&gt;&gt; { onTrackerNetworkTallyChanged(it) }</span>
+
+<span class="fc" id="L65">    private val privacyInitiallyOn = settingsStore.privacyOn</span>
+
+    private val shouldReloadPage: Boolean
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        get() = privacyInitiallyOn != settingsStore.privacyOn</span>
+
+    init {
+<span class="fc" id="L71">        pixel.fire(PRIVACY_DASHBOARD_OPENED)</span>
+<span class="fc" id="L72">        resetViewState()</span>
+<span class="fc" id="L73">        domainsVisited.observeForever(domainsVisitedObserver)</span>
+<span class="fc" id="L74">        trackerNetworkTally.observeForever(trackerNetworkActivityObserver)</span>
+    }
+
+    @VisibleForTesting
+    public override fun onCleared() {
+<span class="fc" id="L79">        super.onCleared()</span>
+<span class="fc" id="L80">        domainsVisited.removeObserver(domainsVisitedObserver)</span>
+<span class="fc" id="L81">        trackerNetworkTally.removeObserver(trackerNetworkActivityObserver)</span>
+<span class="fc" id="L82">    }</span>
+
+    fun onDomainsVisitedChanged(count: Int?) {
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        val domainCount = count ?: 0</span>
+<span class="pc bpc" id="L86" title="2 of 4 branches missed.">        val networkCount = viewState.value?.trackerNetworkTally?.count() ?: 0</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        viewState.value = viewState.value?.copy(</span>
+<span class="fc" id="L88">            showTrackerNetworkLeaderboard = showTrackerNetworkLeaderboard(domainCount, networkCount),</span>
+<span class="fc" id="L89">            domainsVisited = domainCount</span>
+        )
+<span class="fc" id="L91">    }</span>
+
+    fun onTrackerNetworkTallyChanged(tally: List&lt;NetworkTally&gt;?) {
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        val domainCount = viewState.value?.domainsVisited ?: 0</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        val networkTally = tally ?: emptyList()</span>
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        viewState.value = viewState.value?.copy(</span>
+<span class="fc" id="L97">            showTrackerNetworkLeaderboard = showTrackerNetworkLeaderboard(domainCount, networkTally.count()),</span>
+<span class="fc" id="L98">            trackerNetworkTally = networkTally</span>
+        )
+<span class="fc" id="L100">    }</span>
+
+    private fun showTrackerNetworkLeaderboard(domainCount: Int, networkCount: Int): Boolean {
+<span class="fc bfc" id="L103" title="All 4 branches covered.">        return domainCount &gt; LEADERNOARD_MIN_DOMAINS_EXCLUSIVE &amp;&amp; networkCount &gt;= LEADERBOARD_MIN_NETWORKS</span>
+    }
+
+    fun onSiteChanged(site: Site?) {
+<span class="fc" id="L107">        this.site = site</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (site == null) {</span>
+<span class="nc" id="L109">            resetViewState()</span>
+        } else {
+<span class="fc" id="L111">            updateSite(site)</span>
+        }
+<span class="fc" id="L113">    }</span>
+
+    private fun resetViewState() {
+<span class="fc" id="L116">        viewState.value = ViewState(</span>
+<span class="fc" id="L117">            domain = &quot;&quot;,</span>
+<span class="fc" id="L118">            beforeGrade = PrivacyGrade.UNKNOWN,</span>
+<span class="fc" id="L119">            afterGrade = PrivacyGrade.UNKNOWN,</span>
+<span class="fc" id="L120">            httpsStatus = HttpsStatus.SECURE,</span>
+<span class="fc" id="L121">            trackerCount = 0,</span>
+<span class="fc" id="L122">            allTrackersBlocked = true,</span>
+<span class="fc" id="L123">            toggleEnabled = settingsStore.privacyOn,</span>
+<span class="fc" id="L124">            practices = UNKNOWN,</span>
+<span class="fc" id="L125">            showTrackerNetworkLeaderboard = false,</span>
+<span class="fc" id="L126">            domainsVisited = 0,</span>
+<span class="fc" id="L127">            trackerNetworkTally = emptyList(),</span>
+<span class="fc" id="L128">            shouldReloadPage = shouldReloadPage</span>
+        )
+<span class="fc" id="L130">    }</span>
+
+    private fun updateSite(site: Site) {
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        viewState.value = viewState.value?.copy(</span>
+<span class="pc bpc" id="L134" title="3 of 4 branches missed.">            domain = site.uri?.host ?: &quot;&quot;,</span>
+<span class="fc" id="L135">            beforeGrade = site.grade,</span>
+<span class="fc" id="L136">            afterGrade = site.improvedGrade,</span>
+<span class="fc" id="L137">            httpsStatus = site.https,</span>
+<span class="fc" id="L138">            trackerCount = site.trackerCount,</span>
+<span class="fc" id="L139">            allTrackersBlocked = site.allTrackersBlocked,</span>
+<span class="fc" id="L140">            practices = site.privacyPractices.summary</span>
+        )
+<span class="fc" id="L142">    }</span>
+
+    fun onPrivacyToggled(enabled: Boolean) {
+<span class="nc bnc" id="L145" title="All 4 branches missed.">        if (enabled != viewState.value?.toggleEnabled) {</span>
+<span class="nc" id="L146">            settingsStore.privacyOn = enabled</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            viewState.value = viewState.value?.copy(</span>
+<span class="nc" id="L148">                toggleEnabled = enabled,</span>
+<span class="nc" id="L149">                shouldReloadPage = shouldReloadPage</span>
+            )
+        }
+<span class="nc" id="L152">    }</span>
+
+<span class="fc" id="L154">    private companion object {</span>
+        private const val LEADERBOARD_MIN_NETWORKS = 3
+        private const val LEADERNOARD_MIN_DOMAINS_EXCLUSIVE = 30
+    }
+}
+
+
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

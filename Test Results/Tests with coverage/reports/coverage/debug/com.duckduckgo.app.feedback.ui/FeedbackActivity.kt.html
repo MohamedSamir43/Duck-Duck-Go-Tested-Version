@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FeedbackActivity.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.feedback.ui</a> &gt; <span class="el_source">FeedbackActivity.kt</span></div><h1>FeedbackActivity.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.feedback.ui
+
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.text.Editable
+import android.widget.EditText
+import androidx.core.view.isVisible
+import androidx.lifecycle.Observer
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.feedback.ui.FeedbackViewModel.Command
+import com.duckduckgo.app.feedback.ui.FeedbackViewModel.ViewState
+import com.duckduckgo.app.global.DuckDuckGoActivity
+import com.duckduckgo.app.global.view.TextChangedWatcher
+import kotlinx.android.synthetic.main.activity_feedback.*
+import org.jetbrains.anko.longToast
+
+
+<span class="nc" id="L35">class FeedbackActivity : DuckDuckGoActivity() {</span>
+
+<span class="nc" id="L37">    private val viewModel: FeedbackViewModel by bindViewModel()</span>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L40">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L41">        setContentView(R.layout.activity_feedback)</span>
+<span class="nc" id="L42">        configureListeners()</span>
+<span class="nc" id="L43">        configureObservers()</span>
+
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (savedInstanceState == null) {</span>
+<span class="nc" id="L46">            consumeIntentExtra()</span>
+        }
+<span class="nc" id="L48">    }</span>
+
+    private fun consumeIntentExtra() {
+<span class="nc" id="L51">        val brokenSite = intent.getBooleanExtra(BROKEN_SITE_EXTRA, false)</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (brokenSite) {</span>
+<span class="nc" id="L53">            val url = intent.getStringExtra(URL_EXTRA)</span>
+<span class="nc" id="L54">            viewModel.setInitialBrokenSite(url)</span>
+        }
+<span class="nc" id="L56">    }</span>
+
+    private fun configureListeners() {
+<span class="nc" id="L59">        brokenSiteSwitch.setOnCheckedChangeListener { _, isChecked -&gt;</span>
+<span class="nc" id="L60">            viewModel.onBrokenSiteChanged(isChecked)</span>
+<span class="nc" id="L61">        }</span>
+<span class="nc" id="L62">        feedbackMessage.addTextChangedListener(object : TextChangedWatcher() {</span>
+            override fun afterTextChanged(editable: Editable) {
+<span class="nc" id="L64">                viewModel.onFeedbackMessageChanged(editable.toString())</span>
+<span class="nc" id="L65">            }</span>
+        })
+<span class="nc" id="L67">        brokenSiteUrl.addTextChangedListener(object : TextChangedWatcher() {</span>
+            override fun afterTextChanged(editable: Editable) {
+<span class="nc" id="L69">                viewModel.onBrokenSiteUrlChanged(editable.toString())</span>
+<span class="nc" id="L70">            }</span>
+        })
+<span class="nc" id="L72">        submitButton.setOnClickListener {</span>
+<span class="nc" id="L73">            viewModel.onSubmitPressed()</span>
+<span class="nc" id="L74">        }</span>
+<span class="nc" id="L75">    }</span>
+
+    private fun configureObservers() {
+<span class="nc" id="L78">        viewModel.command.observe(this, Observer {</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            it?.let { processCommand(it) }</span>
+<span class="nc" id="L80">        })</span>
+<span class="nc" id="L81">        viewModel.viewState.observe(this, Observer&lt;ViewState&gt; {</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            it?.let { render(it) }</span>
+<span class="nc" id="L83">        })</span>
+<span class="nc" id="L84">    }</span>
+
+    private fun processCommand(command: Command) {
+<span class="nc" id="L87">        when (command) {</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            Command.FocusUrl -&gt; brokenSiteUrl.requestFocus()</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            Command.FocusMessage -&gt; feedbackMessage.requestFocus()</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">            Command.ConfirmAndFinish -&gt; confirmAndFinish()</span>
+        }
+<span class="nc" id="L92">    }</span>
+
+    private fun confirmAndFinish() {
+<span class="nc" id="L95">        longToast(R.string.feedbackSubmitted)</span>
+<span class="nc" id="L96">        finish()</span>
+<span class="nc" id="L97">    }</span>
+
+    private fun render(viewState: ViewState) {
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        val messageHint = if (viewState.isBrokenSite) R.string.feedbackBrokenSiteHint else R.string.feedbackMessageHint</span>
+<span class="nc" id="L101">        brokenSiteSwitch.isChecked = viewState.isBrokenSite</span>
+<span class="nc" id="L102">        brokenSiteUrl.isVisible = viewState.showUrl</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        brokenSiteUrl.updateText(viewState.url ?: &quot;&quot;)</span>
+<span class="nc" id="L104">        feedbackMessage.setHint(messageHint)</span>
+<span class="nc" id="L105">        submitButton.isEnabled = viewState.submitAllowed</span>
+<span class="nc" id="L106">    }</span>
+
+    private fun EditText.updateText(newText: String) {
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (text.toString() != newText) {</span>
+<span class="nc" id="L110">            setText(newText)</span>
+        }
+<span class="nc" id="L112">    }</span>
+
+<span class="nc" id="L114">    companion object {</span>
+
+        private const val BROKEN_SITE_EXTRA = &quot;BROKEN_SITE_EXTRA&quot;
+        private const val URL_EXTRA = &quot;URL_EXTRA&quot;
+
+        fun intent(context: Context, brokenSite: Boolean = false, url: String? = null): Intent {
+<span class="nc" id="L120">            val intent = Intent(context, FeedbackActivity::class.java)</span>
+<span class="nc" id="L121">            intent.putExtra(BROKEN_SITE_EXTRA, brokenSite)</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">            if (url != null) {</span>
+<span class="nc" id="L123">                intent.putExtra(URL_EXTRA, url)</span>
+            }
+<span class="nc" id="L125">            return intent</span>
+        }
+
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TabSwitcherAdapter.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.tabs.ui</a> &gt; <span class="el_source">TabSwitcherAdapter.kt</span></div><h1>TabSwitcherAdapter.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.tabs.ui
+
+import android.content.Context
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.annotation.DrawableRes
+import androidx.recyclerview.widget.RecyclerView.Adapter
+import androidx.recyclerview.widget.RecyclerView.ViewHolder
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.global.image.GlideApp
+import com.duckduckgo.app.tabs.model.TabEntity
+import com.duckduckgo.app.tabs.ui.TabSwitcherAdapter.TabViewHolder
+import kotlinx.android.synthetic.main.item_tab.view.*
+
+<span class="nc" id="L34">class TabSwitcherAdapter(private val context: Context, private val itemClickListener: TabSwitchedListener) : Adapter&lt;TabViewHolder&gt;() {</span>
+
+<span class="nc" id="L36">    private var data: List&lt;TabEntity&gt; = ArrayList()</span>
+    private var selectedTab: TabEntity? = null
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): TabViewHolder {
+<span class="nc" id="L40">        val inflater = LayoutInflater.from(parent.context)</span>
+<span class="nc" id="L41">        val root = inflater.inflate(R.layout.item_tab, parent, false)</span>
+<span class="nc" id="L42">        return TabViewHolder(root, root.favicon, root.title, root.url, root.close, root.tabUnread)</span>
+    }
+
+    override fun getItemCount(): Int {
+<span class="nc" id="L46">        return data.size</span>
+    }
+
+    override fun onBindViewHolder(holder: TabViewHolder, position: Int) {
+
+<span class="nc" id="L51">        val tab = data[position]</span>
+<span class="nc" id="L52">        holder.title.text = tab.displayTitle(context)</span>
+<span class="nc" id="L53">        holder.url.text = tab.displayUrl()</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        holder.tabUnread.visibility = if (tab.viewed) View.INVISIBLE else View.VISIBLE</span>
+<span class="nc bnc" id="L55" title="All 4 branches missed.">        holder.root.setBackgroundResource(if (tab.tabId == selectedTab?.tabId) SELECTED_BACKGROUND else DEFAULT_BACKGROUND)</span>
+
+<span class="nc" id="L57">        GlideApp.with(holder.root)</span>
+<span class="nc" id="L58">            .load(tab.favicon())</span>
+<span class="nc" id="L59">            .placeholder(R.drawable.ic_globe_gray_16dp)</span>
+<span class="nc" id="L60">            .error(R.drawable.ic_globe_gray_16dp)</span>
+<span class="nc" id="L61">            .into(holder.favicon)</span>
+
+<span class="nc" id="L63">        attachClickListeners(holder, tab)</span>
+<span class="nc" id="L64">    }</span>
+
+    private fun attachClickListeners(holder: TabViewHolder, tab: TabEntity) {
+<span class="nc" id="L67">        holder.root.setOnClickListener {</span>
+<span class="nc" id="L68">            itemClickListener.onTabSelected(tab)</span>
+<span class="nc" id="L69">        }</span>
+<span class="nc" id="L70">        holder.close.setOnClickListener {</span>
+<span class="nc" id="L71">            itemClickListener.onTabDeleted(tab)</span>
+<span class="nc" id="L72">        }</span>
+<span class="nc" id="L73">    }</span>
+
+    fun updateData(data: List&lt;TabEntity&gt;?, selectedTab: TabEntity?) {
+
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        data ?: return</span>
+
+<span class="nc" id="L79">        this.data = data</span>
+<span class="nc" id="L80">        this.selectedTab = selectedTab</span>
+<span class="nc" id="L81">        notifyDataSetChanged()</span>
+<span class="nc" id="L82">    }</span>
+
+    interface TabSwitchedListener {
+        fun onNewTabRequested()
+        fun onTabSelected(tab: TabEntity)
+        fun onTabDeleted(tab: TabEntity)
+    }
+
+<span class="nc" id="L90">    data class TabViewHolder(</span>
+<span class="nc" id="L91">        val root: View,</span>
+<span class="nc" id="L92">        val favicon: ImageView,</span>
+<span class="nc" id="L93">        val title: TextView,</span>
+<span class="nc" id="L94">        val url: TextView,</span>
+<span class="nc" id="L95">        val close: ImageView,</span>
+<span class="nc" id="L96">        val tabUnread: View</span>
+<span class="nc" id="L97">    ) : ViewHolder(root)</span>
+
+<span class="nc" id="L99">    companion object {</span>
+
+        @DrawableRes
+        private const val SELECTED_BACKGROUND = R.drawable.tab_background_selected
+        @DrawableRes
+        private const val DEFAULT_BACKGROUND = R.drawable.tab_background
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

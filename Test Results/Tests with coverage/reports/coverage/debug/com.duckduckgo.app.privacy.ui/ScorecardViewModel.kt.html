@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ScorecardViewModel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.privacy.ui</a> &gt; <span class="el_source">ScorecardViewModel.kt</span></div><h1>ScorecardViewModel.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.privacy.ui
+
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.ViewModel
+import com.duckduckgo.app.global.model.Site
+import com.duckduckgo.app.privacy.model.HttpsStatus
+import com.duckduckgo.app.privacy.model.PrivacyGrade
+import com.duckduckgo.app.privacy.model.PrivacyPractices
+import com.duckduckgo.app.privacy.model.PrivacyPractices.Summary.UNKNOWN
+import com.duckduckgo.app.privacy.model.TermsOfService
+import com.duckduckgo.app.privacy.store.PrivacySettingsStore
+
+<span class="fc" id="L29">class ScorecardViewModel(private val settingsStore: PrivacySettingsStore) : ViewModel() {</span>
+
+<span class="fc" id="L31">    data class ViewState(</span>
+<span class="fc" id="L32">        val domain: String,</span>
+<span class="fc" id="L33">        val beforeGrade: PrivacyGrade,</span>
+<span class="fc" id="L34">        val afterGrade: PrivacyGrade,</span>
+<span class="fc" id="L35">        val httpsStatus: HttpsStatus,</span>
+<span class="fc" id="L36">        val trackerCount: Int,</span>
+<span class="fc" id="L37">        val majorNetworkCount: Int,</span>
+<span class="fc" id="L38">        val allTrackersBlocked: Boolean,</span>
+<span class="fc" id="L39">        val practices: PrivacyPractices.Summary,</span>
+<span class="nc" id="L40">        val privacyOn: Boolean,</span>
+<span class="fc" id="L41">        val showIsMemberOfMajorNetwork: Boolean,</span>
+<span class="fc" id="L42">        val showEnhancedGrade: Boolean</span>
+    )
+
+<span class="fc" id="L45">    val viewState: MutableLiveData&lt;ViewState&gt; = MutableLiveData()</span>
+    private var site: Site? = null
+
+    init {
+<span class="fc" id="L49">        resetViewState()</span>
+    }
+
+    fun onSiteChanged(site: Site?) {
+<span class="fc" id="L53">        this.site = site</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (site == null) {</span>
+<span class="nc" id="L55">            resetViewState()</span>
+        } else {
+<span class="fc" id="L57">            updateSite(site)</span>
+        }
+<span class="fc" id="L59">    }</span>
+
+    private fun resetViewState() {
+<span class="fc" id="L62">        viewState.value = ViewState(</span>
+<span class="fc" id="L63">            domain = &quot;&quot;,</span>
+<span class="fc" id="L64">            beforeGrade = PrivacyGrade.UNKNOWN,</span>
+<span class="fc" id="L65">            afterGrade = PrivacyGrade.UNKNOWN,</span>
+<span class="fc" id="L66">            httpsStatus = HttpsStatus.SECURE,</span>
+<span class="fc" id="L67">            trackerCount = 0,</span>
+<span class="fc" id="L68">            majorNetworkCount = 0,</span>
+<span class="fc" id="L69">            allTrackersBlocked = true,</span>
+<span class="fc" id="L70">            practices = UNKNOWN,</span>
+<span class="fc" id="L71">            privacyOn = settingsStore.privacyOn,</span>
+<span class="fc" id="L72">            showIsMemberOfMajorNetwork = false,</span>
+<span class="fc" id="L73">            showEnhancedGrade = false</span>
+        )
+<span class="fc" id="L75">    }</span>
+
+    private fun updateSite(site: Site) {
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        viewState.value = viewState.value?.copy(</span>
+<span class="pc bpc" id="L79" title="3 of 4 branches missed.">            domain = site.uri?.host ?: &quot;&quot;,</span>
+<span class="fc" id="L80">            beforeGrade = site.grade,</span>
+<span class="fc" id="L81">            afterGrade = site.improvedGrade,</span>
+<span class="fc" id="L82">            trackerCount = site.trackerCount,</span>
+<span class="fc" id="L83">            majorNetworkCount = site.majorNetworkCount,</span>
+<span class="fc" id="L84">            httpsStatus = site.https,</span>
+<span class="fc" id="L85">            allTrackersBlocked = site.allTrackersBlocked,</span>
+<span class="fc" id="L86">            practices = site.privacyPractices.summary,</span>
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            showIsMemberOfMajorNetwork = site.memberNetwork?.isMajor ?: false,</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">            showEnhancedGrade = site.grade != site.improvedGrade</span>
+        )
+<span class="fc" id="L90">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

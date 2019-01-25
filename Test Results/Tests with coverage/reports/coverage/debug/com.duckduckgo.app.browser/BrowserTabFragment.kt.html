@@ -1,0 +1,1098 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BrowserTabFragment.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser</a> &gt; <span class="el_source">BrowserTabFragment.kt</span></div><h1>BrowserTabFragment.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser
+
+import android.Manifest
+import android.animation.LayoutTransition.CHANGING
+import android.animation.LayoutTransition.DISAPPEARING
+import android.annotation.SuppressLint
+import android.app.Activity.RESULT_OK
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.content.res.Configuration.ORIENTATION_LANDSCAPE
+import android.media.MediaScannerConnection
+import android.net.Uri
+import android.os.Bundle
+import android.os.Environment
+import android.text.Editable
+import android.view.*
+import android.view.View.GONE
+import android.view.View.VISIBLE
+import android.view.inputmethod.EditorInfo
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
+import android.webkit.WebSettings
+import android.webkit.WebView
+import android.webkit.WebView.FindListener
+import android.widget.EditText
+import android.widget.TextView
+import androidx.annotation.AnyThread
+import androidx.annotation.StringRes
+import androidx.appcompat.app.AlertDialog
+import androidx.constraintlayout.widget.ConstraintSet
+import androidx.core.content.ContextCompat
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.view.isVisible
+import androidx.core.view.postDelayed
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProviders
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.duckduckgo.app.bookmarks.ui.SaveBookmarkDialogFragment
+import com.duckduckgo.app.browser.BrowserTabViewModel.*
+import com.duckduckgo.app.browser.autoComplete.BrowserAutoCompleteSuggestionsAdapter
+import com.duckduckgo.app.browser.downloader.FileDownloadNotificationManager
+import com.duckduckgo.app.browser.downloader.FileDownloader
+import com.duckduckgo.app.browser.downloader.FileDownloader.PendingFileDownload
+import com.duckduckgo.app.browser.filechooser.FileChooserIntentBuilder
+import com.duckduckgo.app.browser.omnibar.KeyboardAwareEditText
+import com.duckduckgo.app.browser.session.WebViewSessionStorage
+import com.duckduckgo.app.browser.shortcut.ShortcutBuilder
+import com.duckduckgo.app.browser.useragent.UserAgentProvider
+import com.duckduckgo.app.feedback.model.Survey
+import com.duckduckgo.app.feedback.ui.SurveyActivity
+import com.duckduckgo.app.global.ViewModelFactory
+import com.duckduckgo.app.global.view.*
+import com.duckduckgo.app.privacy.model.PrivacyGrade
+import com.duckduckgo.app.privacy.renderer.icon
+import com.duckduckgo.app.statistics.pixels.Pixel
+import com.duckduckgo.app.statistics.pixels.Pixel.PixelName.*
+import com.duckduckgo.app.tabs.model.TabEntity
+import com.google.android.material.snackbar.Snackbar
+import dagger.android.support.AndroidSupportInjection
+import kotlinx.android.synthetic.main.fragment_browser_tab.*
+import kotlinx.android.synthetic.main.include_find_in_page.*
+import kotlinx.android.synthetic.main.include_new_browser_tab.*
+import kotlinx.android.synthetic.main.include_omnibar_toolbar.*
+import kotlinx.android.synthetic.main.include_omnibar_toolbar.view.*
+import kotlinx.android.synthetic.main.include_survey_cta.*
+import kotlinx.android.synthetic.main.popup_window_browser_menu.view.*
+import org.jetbrains.anko.configuration
+import org.jetbrains.anko.longToast
+import org.jetbrains.anko.share
+import timber.log.Timber
+import java.io.File
+import javax.inject.Inject
+import kotlin.concurrent.thread
+
+
+<span class="nc" id="L97">class BrowserTabFragment : Fragment(), FindListener {</span>
+
+    @Inject
+<span class="nc bnc" id="L100" title="All 2 branches missed.">    lateinit var webViewClient: BrowserWebViewClient</span>
+
+    @Inject
+<span class="nc bnc" id="L103" title="All 2 branches missed.">    lateinit var webChromeClient: BrowserChromeClient</span>
+
+    @Inject
+<span class="nc bnc" id="L106" title="All 2 branches missed.">    lateinit var viewModelFactory: ViewModelFactory</span>
+
+    @Inject
+<span class="nc bnc" id="L109" title="All 2 branches missed.">    lateinit var fileChooserIntentBuilder: FileChooserIntentBuilder</span>
+
+    @Inject
+<span class="nc bnc" id="L112" title="All 2 branches missed.">    lateinit var fileDownloader: FileDownloader</span>
+
+    @Inject
+<span class="nc bnc" id="L115" title="All 2 branches missed.">    lateinit var fileDownloadNotificationManager: FileDownloadNotificationManager</span>
+
+    @Inject
+<span class="nc bnc" id="L118" title="All 2 branches missed.">    lateinit var webViewSessionStorage: WebViewSessionStorage</span>
+
+    @Inject
+<span class="nc bnc" id="L121" title="All 2 branches missed.">    lateinit var shortcutBuilder: ShortcutBuilder</span>
+
+    @Inject
+<span class="nc bnc" id="L124" title="All 2 branches missed.">    lateinit var clipboardManager: ClipboardManager</span>
+
+    @Inject
+<span class="nc bnc" id="L127" title="All 2 branches missed.">    lateinit var pixel: Pixel</span>
+
+<span class="nc bnc" id="L129" title="All 4 branches missed.">    val tabId get() = arguments!![TAB_ID_ARG] as String</span>
+
+<span class="nc bnc" id="L131" title="All 2 branches missed.">    private val initialUrl get() = arguments!![URL_EXTRA_ARG] as String?</span>
+
+<span class="nc bnc" id="L133" title="All 2 branches missed.">    lateinit var userAgentProvider: UserAgentProvider</span>
+
+    private lateinit var popupMenu: BrowserPopupMenu
+
+    private lateinit var autoCompleteSuggestionsAdapter: BrowserAutoCompleteSuggestionsAdapter
+
+    // Used to represent a file to download, but may first require permission
+    private var pendingFileDownload: PendingFileDownload? = null
+
+    private var pendingUploadTask: ValueCallback&lt;Array&lt;Uri&gt;&gt;? = null
+
+    private lateinit var renderer: BrowserTabFragmentRenderer
+
+<span class="nc" id="L146">    private val viewModel: BrowserTabViewModel by lazy {</span>
+<span class="nc" id="L147">        val viewModel = ViewModelProviders.of(this, viewModelFactory).get(BrowserTabViewModel::class.java)</span>
+<span class="nc" id="L148">        viewModel.loadData(tabId, initialUrl)</span>
+<span class="nc" id="L149">        viewModel</span>
+    }
+
+    private val browserActivity
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        get() = activity as? BrowserActivity</span>
+
+    private val tabsButton: MenuItem?
+<span class="nc" id="L156">        get() = toolbar.menu.findItem(R.id.tabs)</span>
+
+    private val fireMenuButton: MenuItem?
+<span class="nc" id="L159">        get() = toolbar.menu.findItem(R.id.fire)</span>
+
+    private val menuButton: MenuItem?
+<span class="nc" id="L162">        get() = toolbar.menu.findItem(R.id.browserPopup)</span>
+
+    private var webView: WebView? = null
+
+<span class="nc" id="L166">    private val findInPageTextWatcher = object : TextChangedWatcher() {</span>
+        override fun afterTextChanged(editable: Editable) {
+<span class="nc" id="L168">            viewModel.userFindingInPage(findInPageInput.text.toString())</span>
+<span class="nc" id="L169">        }</span>
+    }
+
+<span class="nc" id="L172">    private val omnibarInputTextWatcher = object : TextChangedWatcher() {</span>
+        override fun afterTextChanged(editable: Editable) {
+<span class="nc" id="L174">            viewModel.onOmnibarInputStateChanged(</span>
+<span class="nc" id="L175">                omnibarTextInput.text.toString(),</span>
+<span class="nc" id="L176">                omnibarTextInput.hasFocus()</span>
+            )
+<span class="nc" id="L178">        }</span>
+    }
+
+<span class="nc" id="L181">    private val logoHidingLayoutChangeListener by lazy { LogoHidingLayoutChangeListener(ddgLogo) }</span>
+
+    override fun onAttach(context: Context?) {
+<span class="nc" id="L184">        AndroidSupportInjection.inject(this)</span>
+<span class="nc" id="L185">        super.onAttach(context)</span>
+<span class="nc" id="L186">    }</span>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L189">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L190">        renderer = BrowserTabFragmentRenderer()</span>
+<span class="nc" id="L191">    }</span>
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+<span class="nc" id="L194">        return inflater.inflate(R.layout.fragment_browser_tab, container, false)</span>
+    }
+
+    override fun onActivityCreated(savedInstanceState: Bundle?) {
+<span class="nc" id="L198">        super.onActivityCreated(savedInstanceState)</span>
+<span class="nc" id="L199">        createPopupMenu()</span>
+<span class="nc" id="L200">        configureObservers()</span>
+<span class="nc" id="L201">        configureToolbar()</span>
+<span class="nc" id="L202">        configureWebView()</span>
+<span class="nc bnc" id="L203" title="All 4 branches missed.">        viewModel.registerWebViewListener(webViewClient, webChromeClient)</span>
+<span class="nc" id="L204">        configureOmnibarTextInput()</span>
+<span class="nc" id="L205">        configureFindInPage()</span>
+<span class="nc" id="L206">        configureAutoComplete()</span>
+<span class="nc" id="L207">        configureKeyboardAwareLogoAnimation()</span>
+<span class="nc" id="L208">        configureShowTabSwitcherListener()</span>
+
+<span class="nc bnc" id="L210" title="All 2 branches missed.">        if (savedInstanceState == null) {</span>
+<span class="nc" id="L211">            viewModel.onViewReady()</span>
+        }
+<span class="nc" id="L213">    }</span>
+
+    private fun configureShowTabSwitcherListener() {
+<span class="nc bnc" id="L216" title="All 4 branches missed.">        tabsButton?.actionView?.setOnClickListener {</span>
+<span class="nc bnc" id="L217" title="All 2 branches missed.">            browserActivity?.launchTabSwitcher()</span>
+<span class="nc" id="L218">        }</span>
+<span class="nc" id="L219">    }</span>
+
+    override fun onResume() {
+<span class="nc" id="L222">        super.onResume()</span>
+<span class="nc" id="L223">        addTextChangedListeners()</span>
+<span class="nc" id="L224">        appBarLayout.setExpanded(true)</span>
+<span class="nc" id="L225">        viewModel.onViewVisible()</span>
+<span class="nc" id="L226">    }</span>
+
+    private fun createPopupMenu() {
+<span class="nc" id="L229">        popupMenu = BrowserPopupMenu(layoutInflater)</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        val view = popupMenu.contentView</span>
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        popupMenu.apply {</span>
+<span class="nc bnc" id="L232" title="All 2 branches missed.">            onMenuItemClicked(view.forwardPopupMenuItem) { webView?.goForward() }</span>
+<span class="nc bnc" id="L233" title="All 2 branches missed.">            onMenuItemClicked(view.backPopupMenuItem) { webView?.goBack() }</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">            onMenuItemClicked(view.refreshPopupMenuItem) { webView?.reload() }</span>
+<span class="nc bnc" id="L235" title="All 2 branches missed.">            onMenuItemClicked(view.newTabPopupMenuItem) { browserActivity?.launchNewTab() }</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">            onMenuItemClicked(view.bookmarksPopupMenuItem) { browserActivity?.launchBookmarks() }</span>
+<span class="nc" id="L237">            onMenuItemClicked(view.addBookmarksPopupMenuItem) { addBookmark() }</span>
+<span class="nc" id="L238">            onMenuItemClicked(view.findInPageMenuItem) { viewModel.userRequestingToFindInPage() }</span>
+<span class="nc" id="L239">            onMenuItemClicked(view.brokenSitePopupMenuItem) { viewModel.onBrokenSiteSelected() }</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">            onMenuItemClicked(view.settingsPopupMenuItem) { browserActivity?.launchSettings() }</span>
+<span class="nc" id="L241">            onMenuItemClicked(view.requestDesktopSiteCheckMenuItem) {</span>
+<span class="nc" id="L242">                viewModel.desktopSiteModeToggled(</span>
+<span class="nc bnc" id="L243" title="All 2 branches missed.">                    urlString = webView?.url,</span>
+<span class="nc" id="L244">                    desktopSiteRequested = view.requestDesktopSiteCheckMenuItem.isChecked</span>
+                )
+<span class="nc" id="L246">            }</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">            onMenuItemClicked(view.sharePageMenuItem) { viewModel.userSharingLink(webView?.url) }</span>
+<span class="nc" id="L248">            onMenuItemClicked(view.addToHome) {</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">                context?.let {</span>
+<span class="nc bnc" id="L250" title="All 4 branches missed.">                    val url = webView?.url ?: return@let</span>
+<span class="nc" id="L251">                    viewModel.userRequestedToPinPageToHome(url)</span>
+<span class="nc" id="L252">                }</span>
+<span class="nc" id="L253">            }</span>
+<span class="nc" id="L254">        }</span>
+<span class="nc" id="L255">    }</span>
+
+    private fun addHomeShortcut(homeShortcut: Command.AddHomeShortcut, context: Context) {
+<span class="nc bnc" id="L258" title="All 2 branches missed.">        val shortcutInfo = shortcutBuilder.buildPinnedPageShortcut(context, homeShortcut)</span>
+<span class="nc" id="L259">        ShortcutManagerCompat.requestPinShortcut(context, shortcutInfo, null)</span>
+<span class="nc" id="L260">    }</span>
+
+    private fun configureObservers() {
+<span class="nc" id="L263">        viewModel.autoCompleteViewState.observe(this, Observer&lt;AutoCompleteViewState&gt; {</span>
+<span class="nc bnc" id="L264" title="All 2 branches missed.">            it?.let { renderer.renderAutocomplete(it) }</span>
+<span class="nc" id="L265">        })</span>
+
+<span class="nc" id="L267">        viewModel.globalLayoutState.observe(this, Observer&lt;GlobalLayoutViewState&gt; {</span>
+<span class="nc bnc" id="L268" title="All 2 branches missed.">            it?.let { renderer.renderGlobalViewState(it) }</span>
+<span class="nc" id="L269">        })</span>
+
+<span class="nc" id="L271">        viewModel.browserViewState.observe(this, Observer&lt;BrowserViewState&gt; {</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">            it?.let { renderer.renderBrowserViewState(it) }</span>
+<span class="nc" id="L273">        })</span>
+
+<span class="nc" id="L275">        viewModel.loadingViewState.observe(this, Observer&lt;LoadingViewState&gt; {</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">            it?.let { renderer.renderLoadingIndicator(it) }</span>
+<span class="nc" id="L277">        })</span>
+
+<span class="nc" id="L279">        viewModel.omnibarViewState.observe(this, Observer&lt;OmnibarViewState&gt; {</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            it?.let { renderer.renderOmnibar(it) }</span>
+<span class="nc" id="L281">        })</span>
+
+<span class="nc" id="L283">        viewModel.findInPageViewState.observe(this, Observer&lt;FindInPageViewState&gt; {</span>
+<span class="nc bnc" id="L284" title="All 2 branches missed.">            it?.let { renderer.renderFindInPageState(it) }</span>
+<span class="nc" id="L285">        })</span>
+
+<span class="nc" id="L287">        viewModel.url.observe(this, Observer {</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">            it?.let { navigate(it) }</span>
+<span class="nc" id="L289">        })</span>
+
+<span class="nc" id="L291">        viewModel.surveyViewState.observe(this, Observer {</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">            it?.let { renderer.renderSurveyViewState(it) }</span>
+<span class="nc" id="L293">        })</span>
+
+<span class="nc" id="L295">        viewModel.command.observe(this, Observer {</span>
+<span class="nc" id="L296">            processCommand(it)</span>
+<span class="nc" id="L297">        })</span>
+
+<span class="nc" id="L299">        viewModel.survey.observe(this, Observer&lt;Survey&gt; {</span>
+<span class="nc" id="L300">            it.let { viewModel.onSurveyChanged(it) }</span>
+<span class="nc" id="L301">        })</span>
+
+<span class="nc" id="L303">        addTabsObserver()</span>
+
+<span class="nc" id="L305">    }</span>
+
+    private fun addTabsObserver() {
+<span class="nc" id="L308">        viewModel.tabs.observe(this, Observer&lt;List&lt;TabEntity&gt;&gt; {</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">            it?.let { renderer.renderTabIcon(it) }</span>
+<span class="nc" id="L310">        })</span>
+<span class="nc" id="L311">    }</span>
+
+    fun submitQuery(query: String) {
+<span class="nc" id="L314">        viewModel.onUserSubmittedQuery(query)</span>
+<span class="nc" id="L315">    }</span>
+
+    private fun navigate(url: String) {
+<span class="nc" id="L318">        hideKeyboard()</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        renderer.hideFindInPage()</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        webView?.loadUrl(url)</span>
+<span class="nc" id="L321">    }</span>
+
+    fun refresh() {
+<span class="nc bnc" id="L324" title="All 2 branches missed.">        webView?.reload()</span>
+<span class="nc" id="L325">    }</span>
+
+    private fun processCommand(it: Command?) {
+<span class="nc" id="L328">        when (it) {</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">            Command.Refresh -&gt; refresh()</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">            is Command.OpenInNewTab -&gt; {</span>
+<span class="nc bnc" id="L331" title="All 2 branches missed.">                browserActivity?.openInNewTab(it.query)</span>
+            }
+<span class="nc bnc" id="L333" title="All 2 branches missed.">            is Command.OpenInNewBackgroundTab -&gt; {</span>
+<span class="nc" id="L334">                openInNewBackgroundTab()</span>
+            }
+<span class="nc bnc" id="L336" title="All 2 branches missed.">            is Command.Navigate -&gt; {</span>
+<span class="nc" id="L337">                navigate(it.url)</span>
+            }
+<span class="nc bnc" id="L339" title="All 2 branches missed.">            Command.LandingPage -&gt; resetTabState()</span>
+<span class="nc bnc" id="L340" title="All 2 branches missed.">            is Command.DialNumber -&gt; {</span>
+<span class="nc" id="L341">                val intent = Intent(Intent.ACTION_DIAL)</span>
+<span class="nc" id="L342">                intent.data = Uri.parse(&quot;tel:${it.telephoneNumber}&quot;)</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">                activity?.launchExternalActivity(intent)</span>
+            }
+<span class="nc bnc" id="L345" title="All 2 branches missed.">            is Command.SendEmail -&gt; {</span>
+<span class="nc" id="L346">                val intent = Intent(Intent.ACTION_SENDTO)</span>
+<span class="nc" id="L347">                intent.data = Uri.parse(it.emailAddress)</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">                activity?.launchExternalActivity(intent)</span>
+            }
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            is Command.SendSms -&gt; {</span>
+<span class="nc" id="L351">                val intent = Intent(Intent.ACTION_SENDTO, Uri.parse(&quot;smsto:${it.telephoneNumber}&quot;))</span>
+<span class="nc" id="L352">                startActivity(intent)</span>
+            }
+<span class="nc bnc" id="L354" title="All 2 branches missed.">            Command.ShowKeyboard -&gt; {</span>
+<span class="nc" id="L355">                showKeyboard()</span>
+            }
+<span class="nc bnc" id="L357" title="All 2 branches missed.">            Command.HideKeyboard -&gt; {</span>
+<span class="nc" id="L358">                hideKeyboard()</span>
+            }
+<span class="nc bnc" id="L360" title="All 2 branches missed.">            is Command.BrokenSiteFeedback -&gt; {</span>
+<span class="nc bnc" id="L361" title="All 2 branches missed.">                browserActivity?.launchBrokenSiteFeedback(it.url)</span>
+            }
+<span class="nc bnc" id="L363" title="All 2 branches missed.">            is Command.ShowFullScreen -&gt; {</span>
+<span class="nc" id="L364">                webViewFullScreenContainer.addView(</span>
+<span class="nc" id="L365">                    it.view, ViewGroup.LayoutParams(</span>
+<span class="nc" id="L366">                        ViewGroup.LayoutParams.MATCH_PARENT,</span>
+<span class="nc" id="L367">                        ViewGroup.LayoutParams.MATCH_PARENT</span>
+                    )
+                )
+            }
+<span class="nc bnc" id="L371" title="All 2 branches missed.">            is Command.DownloadImage -&gt; requestImageDownload(it.url)</span>
+<span class="nc bnc" id="L372" title="All 4 branches missed.">            is Command.FindInPageCommand -&gt; webView?.findAllAsync(it.searchTerm)</span>
+<span class="nc bnc" id="L373" title="All 4 branches missed.">            Command.DismissFindInPage -&gt; webView?.findAllAsync(null)</span>
+<span class="nc bnc" id="L374" title="All 2 branches missed.">            is Command.ShareLink -&gt; launchSharePageChooser(it.url)</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">            is Command.CopyLink -&gt; {</span>
+<span class="nc bnc" id="L376" title="All 2 branches missed.">                clipboardManager.primaryClip = ClipData.newPlainText(null, it.url)</span>
+            }
+<span class="nc bnc" id="L378" title="All 2 branches missed.">            is Command.DisplayMessage -&gt; showToast(it.messageId)</span>
+<span class="nc bnc" id="L379" title="All 2 branches missed.">            is Command.ShowFileChooser -&gt; {</span>
+<span class="nc" id="L380">                launchFilePicker(it)</span>
+            }
+<span class="nc bnc" id="L382" title="All 2 branches missed.">            is Command.AddHomeShortcut -&gt; {</span>
+<span class="nc bnc" id="L383" title="All 2 branches missed.">                context?.let { context -&gt;</span>
+<span class="nc" id="L384">                    addHomeShortcut(it, context)</span>
+<span class="nc" id="L385">                }</span>
+            }
+<span class="nc bnc" id="L387" title="All 2 branches missed.">            is Command.HandleExternalAppLink -&gt; {</span>
+<span class="nc" id="L388">                externalAppLinkClicked(it)</span>
+            }
+<span class="nc bnc" id="L390" title="All 2 branches missed.">            is Command.LaunchSurvey -&gt; launchSurvey(it.survey)</span>
+        }
+<span class="nc" id="L392">    }</span>
+
+    private fun openInNewBackgroundTab() {
+<span class="nc" id="L395">        appBarLayout.setExpanded(true, true)</span>
+<span class="nc" id="L396">        viewModel.tabs.removeObservers(this)</span>
+<span class="nc bnc" id="L397" title="All 4 branches missed.">        val view = tabsButton?.actionView as TabSwitcherButton</span>
+<span class="nc" id="L398">        view.increment {</span>
+<span class="nc" id="L399">            addTabsObserver()</span>
+<span class="nc" id="L400">        }</span>
+<span class="nc" id="L401">    }</span>
+
+    private fun externalAppLinkClicked(appLinkCommand: Command.HandleExternalAppLink) {
+<span class="nc bnc" id="L404" title="All 2 branches missed.">        context?.let {</span>
+<span class="nc" id="L405">            val pm = it.packageManager</span>
+<span class="nc" id="L406">            val intent = appLinkCommand.appLink.intent</span>
+<span class="nc" id="L407">            val activities = pm.queryIntentActivities(intent, 0)</span>
+
+<span class="nc" id="L409">            Timber.i(&quot;Found ${activities.size} that could consume ${appLinkCommand.appLink.url}&quot;)</span>
+
+<span class="nc bnc" id="L411" title="All 3 branches missed.">            when (activities.size) {</span>
+                0 -&gt; {
+<span class="nc bnc" id="L413" title="All 2 branches missed.">                    if (appLinkCommand.appLink.fallbackUrl != null) {</span>
+<span class="nc bnc" id="L414" title="All 2 branches missed.">                        webView?.loadUrl(appLinkCommand.appLink.fallbackUrl)</span>
+                    } else {
+<span class="nc" id="L416">                        showToast(R.string.unableToOpenLink)</span>
+                    }
+<span class="nc" id="L418">                    return</span>
+                }
+                1 -&gt; {
+<span class="nc" id="L421">                    val activity = activities.first()</span>
+<span class="nc" id="L422">                    val appTitle = activity.loadLabel(pm)</span>
+<span class="nc" id="L423">                    Timber.i(&quot;Exactly one app available for intent: $appTitle&quot;)</span>
+
+<span class="nc" id="L425">                    AlertDialog.Builder(it)</span>
+<span class="nc" id="L426">                        .setTitle(R.string.launchingExternalApp)</span>
+<span class="nc" id="L427">                        .setMessage(getString(R.string.confirmOpenExternalApp))</span>
+<span class="nc" id="L428">                        .setPositiveButton(R.string.openExternalApp) { _, _ -&gt; it.startActivity(intent) }</span>
+<span class="nc" id="L429">                        .setNegativeButton(android.R.string.cancel) { dialog, _ -&gt; dialog.dismiss() }</span>
+<span class="nc" id="L430">                        .show()</span>
+                }
+                else -&gt; {
+<span class="nc" id="L433">                    val title = getString(R.string.openExternalApp)</span>
+<span class="nc" id="L434">                    val intentChooser = Intent.createChooser(intent, title)</span>
+<span class="nc" id="L435">                    it.startActivity(intentChooser)</span>
+                }
+<span class="nc" id="L437">            }</span>
+
+        }
+<span class="nc" id="L440">    }</span>
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+<span class="nc bnc" id="L443" title="All 2 branches missed.">        if (requestCode == REQUEST_CODE_CHOOSE_FILE) {</span>
+<span class="nc" id="L444">            handleFileUploadResult(resultCode, data)</span>
+        }
+<span class="nc" id="L446">    }</span>
+
+    private fun handleFileUploadResult(resultCode: Int, intent: Intent?) {
+<span class="nc bnc" id="L449" title="All 4 branches missed.">        if (resultCode != RESULT_OK || intent == null) {</span>
+<span class="nc" id="L450">            Timber.i(&quot;Received resultCode $resultCode (or received null intent) indicating user did not select any files&quot;)</span>
+<span class="nc bnc" id="L451" title="All 2 branches missed.">            pendingUploadTask?.onReceiveValue(null)</span>
+<span class="nc" id="L452">            return</span>
+        }
+
+<span class="nc bnc" id="L455" title="All 2 branches missed.">        val uris = fileChooserIntentBuilder.extractSelectedFileUris(intent)</span>
+<span class="nc bnc" id="L456" title="All 2 branches missed.">        pendingUploadTask?.onReceiveValue(uris)</span>
+<span class="nc" id="L457">    }</span>
+
+    private fun showToast(@StringRes messageId: Int) {
+<span class="nc bnc" id="L460" title="All 4 branches missed.">        context?.applicationContext?.longToast(messageId)</span>
+<span class="nc" id="L461">    }</span>
+
+    private fun configureAutoComplete() {
+<span class="nc bnc" id="L464" title="All 2 branches missed.">        val context = context ?: return</span>
+<span class="nc" id="L465">        autoCompleteSuggestionsList.layoutManager = LinearLayoutManager(context)</span>
+<span class="nc" id="L466">        autoCompleteSuggestionsAdapter = BrowserAutoCompleteSuggestionsAdapter(</span>
+<span class="nc" id="L467">            immediateSearchClickListener = {</span>
+<span class="nc" id="L468">                userEnteredQuery(it.phrase)</span>
+<span class="nc" id="L469">            },</span>
+<span class="nc" id="L470">            editableSearchClickListener = {</span>
+<span class="nc" id="L471">                viewModel.onUserSelectedToEditQuery(it.phrase)</span>
+<span class="nc" id="L472">            }</span>
+        )
+<span class="nc bnc" id="L474" title="All 2 branches missed.">        autoCompleteSuggestionsList.adapter = autoCompleteSuggestionsAdapter</span>
+<span class="nc" id="L475">    }</span>
+
+    private fun configureToolbar() {
+<span class="nc" id="L478">        toolbar.inflateMenu(R.menu.menu_browser_activity)</span>
+
+<span class="nc" id="L480">        toolbar.setOnMenuItemClickListener { menuItem -&gt;</span>
+<span class="nc bnc" id="L481" title="All 3 branches missed.">            when (menuItem.itemId) {</span>
+                R.id.fire -&gt; {
+<span class="nc bnc" id="L483" title="All 2 branches missed.">                    browserActivity?.launchFire()</span>
+<span class="nc" id="L484">                    return@setOnMenuItemClickListener true</span>
+                }
+                R.id.browserPopup -&gt; {
+<span class="nc" id="L487">                    hideKeyboardImmediately()</span>
+<span class="nc" id="L488">                    launchPopupMenu()</span>
+<span class="nc" id="L489">                    return@setOnMenuItemClickListener true</span>
+                }
+<span class="nc" id="L491">                else -&gt; return@setOnMenuItemClickListener false</span>
+            }
+        }
+
+<span class="nc" id="L495">        toolbar.privacyGradeButton.setOnClickListener {</span>
+<span class="nc bnc" id="L496" title="All 2 branches missed.">            browserActivity?.launchPrivacyDashboard()</span>
+<span class="nc" id="L497">        }</span>
+
+<span class="nc" id="L499">        viewModel.privacyGrade.observe(this, Observer&lt;PrivacyGrade&gt; {</span>
+<span class="nc bnc" id="L500" title="All 2 branches missed.">            it?.let {</span>
+<span class="nc bnc" id="L501" title="All 4 branches missed.">                val drawable = context?.getDrawable(it.icon()) ?: return@let</span>
+<span class="nc bnc" id="L502" title="All 2 branches missed.">                privacyGradeButton?.setImageDrawable(drawable)</span>
+<span class="nc" id="L503">            }</span>
+<span class="nc" id="L504">        })</span>
+<span class="nc" id="L505">    }</span>
+
+    private fun configureFindInPage() {
+<span class="nc" id="L508">        findInPageInput.setOnFocusChangeListener { _, hasFocus -&gt;</span>
+<span class="nc bnc" id="L509" title="All 6 branches missed.">            if (hasFocus &amp;&amp; findInPageInput.text.toString() != viewModel.findInPageViewState.value?.searchTerm) {</span>
+<span class="nc" id="L510">                viewModel.userFindingInPage(findInPageInput.text.toString())</span>
+            }
+<span class="nc" id="L512">        }</span>
+
+<span class="nc bnc" id="L514" title="All 2 branches missed.">        previousSearchTermButton.setOnClickListener { webView?.findNext(false) }</span>
+<span class="nc bnc" id="L515" title="All 2 branches missed.">        nextSearchTermButton.setOnClickListener { webView?.findNext(true) }</span>
+<span class="nc" id="L516">        closeFindInPagePanel.setOnClickListener {</span>
+<span class="nc" id="L517">            viewModel.dismissFindInView()</span>
+<span class="nc" id="L518">        }</span>
+<span class="nc" id="L519">    }</span>
+
+    private fun configureOmnibarTextInput() {
+        omnibarTextInput.onFocusChangeListener =
+<span class="nc" id="L523">                View.OnFocusChangeListener { _, hasFocus: Boolean -&gt;</span>
+<span class="nc" id="L524">                    viewModel.onOmnibarInputStateChanged(omnibarTextInput.text.toString(), hasFocus)</span>
+<span class="nc" id="L525">                }</span>
+
+<span class="nc" id="L527">        omnibarTextInput.onBackKeyListener = object : KeyboardAwareEditText.OnBackKeyListener {</span>
+            override fun onBackKey(): Boolean {
+<span class="nc" id="L529">                omnibarTextInput.hideKeyboard()</span>
+<span class="nc" id="L530">                focusDummy.requestFocus()</span>
+<span class="nc" id="L531">                return true</span>
+            }
+        }
+
+<span class="nc" id="L535">        omnibarTextInput.setOnEditorActionListener(TextView.OnEditorActionListener { _, actionId, keyEvent -&gt;</span>
+<span class="nc bnc" id="L536" title="All 6 branches missed.">            if (actionId == EditorInfo.IME_ACTION_GO || keyEvent?.keyCode == KeyEvent.KEYCODE_ENTER) {</span>
+<span class="nc" id="L537">                userEnteredQuery(omnibarTextInput.text.toString())</span>
+<span class="nc" id="L538">                return@OnEditorActionListener true</span>
+            }
+<span class="nc" id="L540">            false</span>
+        })
+
+<span class="nc" id="L543">        clearTextButton.setOnClickListener { omnibarTextInput.setText(&quot;&quot;) }</span>
+<span class="nc" id="L544">    }</span>
+
+    private fun configureKeyboardAwareLogoAnimation() {
+        // we want layout transitions for when the size changes; we don't want them when items disappear (can cause glitch on call to action button)
+<span class="nc bnc" id="L548" title="All 2 branches missed.">        newTabLayout.layoutTransition?.enableTransitionType(CHANGING)</span>
+<span class="nc bnc" id="L549" title="All 2 branches missed.">        newTabLayout.layoutTransition?.disableTransitionType(DISAPPEARING)</span>
+
+<span class="nc" id="L551">        rootView.addOnLayoutChangeListener(logoHidingLayoutChangeListener)</span>
+<span class="nc" id="L552">    }</span>
+
+    private fun userEnteredQuery(query: String) {
+<span class="nc" id="L555">        viewModel.onUserSubmittedQuery(query)</span>
+<span class="nc" id="L556">    }</span>
+
+    @SuppressLint(&quot;SetJavaScriptEnabled&quot;)
+    private fun configureWebView() {
+<span class="nc" id="L560">        webView = layoutInflater.inflate(</span>
+<span class="nc" id="L561">            R.layout.include_duckduckgo_browser_webview,</span>
+<span class="nc" id="L562">            webViewContainer,</span>
+<span class="nc" id="L563">            true</span>
+<span class="nc bnc" id="L564" title="All 2 branches missed.">        ).findViewById(R.id.browserWebView) as WebView</span>
+<span class="nc bnc" id="L565" title="All 2 branches missed.">        webView?.let {</span>
+<span class="nc" id="L566">            userAgentProvider = UserAgentProvider(it.settings.userAgentString)</span>
+
+<span class="nc bnc" id="L568" title="All 2 branches missed.">            it.webViewClient = webViewClient</span>
+<span class="nc bnc" id="L569" title="All 2 branches missed.">            it.webChromeClient = webChromeClient</span>
+
+<span class="nc" id="L571">            it.settings.apply {</span>
+<span class="nc bnc" id="L572" title="All 2 branches missed.">                userAgentString = userAgentProvider.getUserAgent()</span>
+<span class="nc" id="L573">                javaScriptEnabled = true</span>
+<span class="nc" id="L574">                domStorageEnabled = true</span>
+<span class="nc" id="L575">                loadWithOverviewMode = true</span>
+<span class="nc" id="L576">                useWideViewPort = true</span>
+<span class="nc" id="L577">                builtInZoomControls = true</span>
+<span class="nc" id="L578">                displayZoomControls = false</span>
+<span class="nc" id="L579">                mixedContentMode = WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE</span>
+<span class="nc" id="L580">                setSupportZoom(true)</span>
+<span class="nc" id="L581">            }</span>
+
+<span class="nc" id="L583">            it.setDownloadListener { url, userAgent, contentDisposition, mimeType, contentLength -&gt;</span>
+<span class="nc" id="L584">                requestFileDownload(url, contentDisposition, mimeType)</span>
+<span class="nc" id="L585">            }</span>
+
+<span class="nc" id="L587">            it.setOnTouchListener { _, _ -&gt;</span>
+<span class="nc bnc" id="L588" title="All 2 branches missed.">                if (omnibarTextInput.isFocused) {</span>
+<span class="nc" id="L589">                    focusDummy.requestFocus()</span>
+                }
+<span class="nc" id="L591">                false</span>
+            }
+
+<span class="nc" id="L594">            registerForContextMenu(it)</span>
+
+<span class="nc" id="L596">            it.setFindListener(this)</span>
+<span class="nc" id="L597">        }</span>
+<span class="nc" id="L598">    }</span>
+
+    private fun addTextChangedListeners() {
+<span class="nc" id="L601">        findInPageInput.replaceTextChangedListener(findInPageTextWatcher)</span>
+<span class="nc" id="L602">        omnibarTextInput.replaceTextChangedListener(omnibarInputTextWatcher)</span>
+<span class="nc" id="L603">    }</span>
+
+    override fun onCreateContextMenu(menu: ContextMenu, view: View, menuInfo: ContextMenu.ContextMenuInfo?) {
+<span class="nc bnc" id="L606" title="All 4 branches missed.">        webView?.hitTestResult?.let {</span>
+<span class="nc" id="L607">            viewModel.userLongPressedInWebView(it, menu)</span>
+<span class="nc" id="L608">        }</span>
+<span class="nc" id="L609">    }</span>
+
+    override fun onContextItemSelected(item: MenuItem): Boolean {
+<span class="nc bnc" id="L612" title="All 4 branches missed.">        webView?.hitTestResult?.let {</span>
+<span class="nc" id="L613">            val url = it.extra</span>
+<span class="nc bnc" id="L614" title="All 2 branches missed.">            if (viewModel.userSelectedItemFromLongPressMenu(url, item)) {</span>
+<span class="nc" id="L615">                return true</span>
+            }
+<span class="nc" id="L617">        }</span>
+
+<span class="nc" id="L619">        return super.onContextItemSelected(item)</span>
+    }
+
+    private fun launchPopupMenu() {
+<span class="nc bnc" id="L623" title="All 2 branches missed.">        popupMenu.show(rootView, toolbar)</span>
+<span class="nc" id="L624">    }</span>
+
+    private fun launchSharePageChooser(url: String) {
+<span class="nc bnc" id="L627" title="All 2 branches missed.">        activity?.share(url, &quot;&quot;)</span>
+<span class="nc" id="L628">    }</span>
+
+    private fun addBookmark() {
+<span class="nc" id="L631">        val addBookmarkDialog = SaveBookmarkDialogFragment.createDialogCreationMode(</span>
+<span class="nc bnc" id="L632" title="All 2 branches missed.">            existingTitle = webView?.title,</span>
+<span class="nc bnc" id="L633" title="All 2 branches missed.">            existingUrl = webView?.url</span>
+        )
+<span class="nc" id="L635">        addBookmarkDialog.show(childFragmentManager, ADD_BOOKMARK_FRAGMENT_TAG)</span>
+<span class="nc" id="L636">        addBookmarkDialog.listener = viewModel</span>
+<span class="nc" id="L637">    }</span>
+
+    override fun onFindResultReceived(activeMatchOrdinal: Int, numberOfMatches: Int, isDoneCounting: Boolean) {
+<span class="nc" id="L640">        viewModel.onFindResultsReceived(activeMatchOrdinal, numberOfMatches)</span>
+<span class="nc" id="L641">    }</span>
+
+    private fun EditText.replaceTextChangedListener(textWatcher: TextChangedWatcher) {
+<span class="nc" id="L644">        removeTextChangedListener(textWatcher)</span>
+<span class="nc" id="L645">        addTextChangedListener(textWatcher)</span>
+<span class="nc" id="L646">    }</span>
+
+    private fun hideKeyboardImmediately() {
+<span class="nc bnc" id="L649" title="All 2 branches missed.">        if (!isHidden) {</span>
+<span class="nc" id="L650">            Timber.v(&quot;Keyboard now hiding&quot;)</span>
+<span class="nc" id="L651">            omnibarTextInput.hideKeyboard()</span>
+<span class="nc" id="L652">            focusDummy.requestFocus()</span>
+        }
+<span class="nc" id="L654">    }</span>
+
+    private fun hideKeyboard() {
+<span class="nc bnc" id="L657" title="All 2 branches missed.">        if (!isHidden) {</span>
+<span class="nc" id="L658">            Timber.v(&quot;Keyboard now hiding&quot;)</span>
+<span class="nc" id="L659">            omnibarTextInput.postDelayed(KEYBOARD_DELAY) { omnibarTextInput?.hideKeyboard() }</span>
+<span class="nc" id="L660">            focusDummy.requestFocus()</span>
+        }
+<span class="nc" id="L662">    }</span>
+
+    private fun showKeyboard() {
+<span class="nc bnc" id="L665" title="All 2 branches missed.">        if (!isHidden) {</span>
+<span class="nc" id="L666">            Timber.v(&quot;Keyboard now showing&quot;)</span>
+<span class="nc" id="L667">            omnibarTextInput.postDelayed(KEYBOARD_DELAY) { omnibarTextInput?.showKeyboard() }</span>
+        }
+<span class="nc" id="L669">    }</span>
+
+    /**
+     * Attempting to save the WebView's state can result in a TransactionTooLargeException being thrown.
+     * This will only happen if the bundle size is too large - but the exact size is undefined.
+     * Instead of saving using normal Android state mechanism - use our own implementation instead.
+     */
+    override fun onSaveInstanceState(bundle: Bundle) {
+<span class="nc" id="L677">        viewModel.saveWebViewState(webView, tabId)</span>
+<span class="nc" id="L678">        super.onSaveInstanceState(bundle)</span>
+<span class="nc" id="L679">    }</span>
+
+    override fun onViewStateRestored(bundle: Bundle?) {
+<span class="nc" id="L682">        viewModel.restoreWebViewState(webView, omnibarTextInput.text.toString())</span>
+<span class="nc" id="L683">        super.onViewStateRestored(bundle)</span>
+<span class="nc" id="L684">    }</span>
+
+    override fun onHiddenChanged(hidden: Boolean) {
+<span class="nc" id="L687">        super.onHiddenChanged(hidden)</span>
+<span class="nc bnc" id="L688" title="All 2 branches missed.">        if (hidden) {</span>
+<span class="nc bnc" id="L689" title="All 2 branches missed.">            webView?.onPause()</span>
+        } else {
+<span class="nc bnc" id="L691" title="All 2 branches missed.">            webView?.onResume()</span>
+<span class="nc" id="L692">            viewModel.onViewVisible()</span>
+        }
+<span class="nc" id="L694">    }</span>
+
+    /**
+     * We don't destroy the activity on config changes like orientation, so we need to ensure we update resources which might change based on config
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+<span class="nc" id="L700">        super.onConfigurationChanged(newConfig)</span>
+<span class="nc bnc" id="L701" title="All 2 branches missed.">        renderer.refreshSurveyViewState(newConfig.isLandscape)</span>
+<span class="nc" id="L702">        ddgLogo.setImageResource(R.drawable.logo_full)</span>
+<span class="nc" id="L703">    }</span>
+
+    private fun resetTabState() {
+<span class="nc bnc" id="L706" title="All 2 branches missed.">        omnibarTextInput.text?.clear()</span>
+<span class="nc" id="L707">        viewModel.resetView()</span>
+<span class="nc" id="L708">        destroyWebView()</span>
+<span class="nc" id="L709">        configureWebView()</span>
+<span class="nc" id="L710">        showKeyboard()</span>
+<span class="nc" id="L711">        appBarLayout.setExpanded(true)</span>
+<span class="nc" id="L712">    }</span>
+
+    fun onBackPressed(): Boolean {
+<span class="nc" id="L715">        return when {</span>
+<span class="nc bnc" id="L716" title="All 4 branches missed.">            webView?.canGoBack() == true -&gt; {</span>
+<span class="nc bnc" id="L717" title="All 2 branches missed.">                webView?.goBack()</span>
+<span class="nc" id="L718">                true</span>
+            }
+<span class="nc bnc" id="L720" title="All 4 branches missed.">            webView?.visibility == VISIBLE -&gt; {</span>
+<span class="nc" id="L721">                resetTabState()</span>
+<span class="nc" id="L722">                true</span>
+            }
+<span class="nc" id="L724">            else -&gt; false</span>
+        }
+    }
+
+    override fun onDestroy() {
+<span class="nc bnc" id="L729" title="All 2 branches missed.">        popupMenu.dismiss()</span>
+<span class="nc" id="L730">        destroyWebView()</span>
+<span class="nc" id="L731">        super.onDestroy()</span>
+<span class="nc" id="L732">    }</span>
+
+    private fun destroyWebView() {
+<span class="nc bnc" id="L735" title="All 2 branches missed.">        webViewContainer?.removeAllViews()</span>
+<span class="nc bnc" id="L736" title="All 2 branches missed.">        webView?.destroy()</span>
+<span class="nc" id="L737">        webView = null</span>
+<span class="nc" id="L738">    }</span>
+
+    private fun requestFileDownload(url: String, contentDisposition: String, mimeType: String) {
+<span class="nc" id="L741">        pendingFileDownload = PendingFileDownload(</span>
+<span class="nc" id="L742">            url = url,</span>
+<span class="nc" id="L743">            contentDisposition = contentDisposition,</span>
+<span class="nc" id="L744">            mimeType = mimeType,</span>
+<span class="nc" id="L745">            subfolder = Environment.DIRECTORY_DOWNLOADS</span>
+        )
+
+<span class="nc" id="L748">        downloadFileWithPermissionCheck()</span>
+<span class="nc" id="L749">    }</span>
+
+    private fun requestImageDownload(url: String) {
+<span class="nc" id="L752">        pendingFileDownload = PendingFileDownload(</span>
+<span class="nc" id="L753">            url = url,</span>
+<span class="nc" id="L754">            subfolder = Environment.DIRECTORY_PICTURES</span>
+        )
+
+<span class="nc" id="L757">        downloadFileWithPermissionCheck()</span>
+<span class="nc" id="L758">    }</span>
+
+    private fun downloadFileWithPermissionCheck() {
+<span class="nc bnc" id="L761" title="All 2 branches missed.">        if (hasWriteStoragePermission()) {</span>
+<span class="nc" id="L762">            downloadFile()</span>
+        } else {
+<span class="nc" id="L764">            requestWriteStoragePermission()</span>
+        }
+<span class="nc" id="L766">    }</span>
+
+    @AnyThread
+    private fun downloadFile() {
+<span class="nc" id="L770">        val pendingDownload = pendingFileDownload</span>
+<span class="nc" id="L771">        pendingFileDownload = null</span>
+<span class="nc" id="L772">        thread {</span>
+<span class="nc" id="L773">            fileDownloader.download(pendingDownload, object : FileDownloader.FileDownloadListener {</span>
+                override fun downloadStarted() {
+<span class="nc" id="L775">                    fileDownloadNotificationManager.showDownloadInProgressNotification()</span>
+<span class="nc" id="L776">                }</span>
+
+                override fun downloadFinished(file: File, mimeType: String?) {
+<span class="nc" id="L779">                    MediaScannerConnection.scanFile(context, arrayOf(file.absolutePath), null, { _, uri -&gt;</span>
+<span class="nc" id="L780">                        fileDownloadNotificationManager.showDownloadFinishedNotification(file.name, uri, mimeType)</span>
+<span class="nc" id="L781">                    })</span>
+<span class="nc" id="L782">                }</span>
+
+                override fun downloadFailed(message: String) {
+<span class="nc" id="L785">                    Timber.w(&quot;Failed to download file [$message]&quot;)</span>
+<span class="nc" id="L786">                    fileDownloadNotificationManager.showDownloadFailedNotification()</span>
+<span class="nc" id="L787">                }</span>
+            })
+<span class="nc" id="L789">        }</span>
+<span class="nc" id="L790">    }</span>
+
+    private fun launchFilePicker(command: Command.ShowFileChooser) {
+<span class="nc" id="L793">        pendingUploadTask = command.filePathCallback</span>
+<span class="nc bnc" id="L794" title="All 2 branches missed.">        val canChooseMultipleFiles = command.fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE</span>
+<span class="nc bnc" id="L795" title="All 2 branches missed.">        val intent = fileChooserIntentBuilder.intent(command.fileChooserParams.acceptTypes, canChooseMultipleFiles)</span>
+<span class="nc" id="L796">        startActivityForResult(intent, REQUEST_CODE_CHOOSE_FILE)</span>
+<span class="nc" id="L797">    }</span>
+
+    private fun hasWriteStoragePermission(): Boolean {
+<span class="nc bnc" id="L800" title="All 4 branches missed.">        return ContextCompat.checkSelfPermission(context!!, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED</span>
+    }
+
+    private fun requestWriteStoragePermission() {
+<span class="nc" id="L804">        requestPermissions(arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE)</span>
+<span class="nc" id="L805">    }</span>
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array&lt;out String&gt;, grantResults: IntArray) {
+<span class="nc bnc" id="L808" title="All 2 branches missed.">        if (requestCode == PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE) {</span>
+<span class="nc bnc" id="L809" title="All 8 branches missed.">            if ((grantResults.isNotEmpty()) &amp;&amp; grantResults[0] == PackageManager.PERMISSION_GRANTED) {</span>
+<span class="nc" id="L810">                Timber.i(&quot;Write external storage permission granted&quot;)</span>
+<span class="nc" id="L811">                downloadFile()</span>
+            } else {
+<span class="nc" id="L813">                Timber.i(&quot;Write external storage permission refused&quot;)</span>
+<span class="nc" id="L814">                Snackbar.make(toolbar, R.string.permissionRequiredToDownload, Snackbar.LENGTH_LONG).show()</span>
+            }
+        }
+<span class="nc" id="L817">    }</span>
+
+    private fun launchSurvey(survey: Survey) {
+<span class="nc bnc" id="L820" title="All 2 branches missed.">        context?.let {</span>
+<span class="nc" id="L821">            startActivity(SurveyActivity.intent(it, survey))</span>
+<span class="nc" id="L822">        }</span>
+<span class="nc" id="L823">    }</span>
+
+<span class="nc" id="L825">    companion object {</span>
+
+        private const val TAB_ID_ARG = &quot;TAB_ID_ARG&quot;
+        private const val ADD_BOOKMARK_FRAGMENT_TAG = &quot;ADD_BOOKMARK&quot;
+        private const val URL_EXTRA_ARG = &quot;URL_EXTRA_ARG&quot;
+        private const val KEYBOARD_DELAY = 200L
+
+        private const val REQUEST_CODE_CHOOSE_FILE = 100
+        private const val PERMISSION_REQUEST_WRITE_EXTERNAL_STORAGE = 200
+
+        fun newInstance(tabId: String, query: String? = null): BrowserTabFragment {
+<span class="nc" id="L836">            val fragment = BrowserTabFragment()</span>
+<span class="nc" id="L837">            val args = Bundle()</span>
+<span class="nc" id="L838">            args.putString(TAB_ID_ARG, tabId)</span>
+<span class="nc" id="L839">            query.let {</span>
+<span class="nc" id="L840">                args.putString(URL_EXTRA_ARG, query)</span>
+<span class="nc" id="L841">            }</span>
+<span class="nc" id="L842">            fragment.arguments = args</span>
+<span class="nc" id="L843">            return fragment</span>
+        }
+    }
+
+<span class="nc" id="L847">    inner class BrowserTabFragmentRenderer {</span>
+
+        private var lastSeenOmnibarViewState: OmnibarViewState? = null
+        private var lastSeenLoadingViewState: LoadingViewState? = null
+        private var lastSeenFindInPageViewState: FindInPageViewState? = null
+        private var lastSeenBrowserViewState: BrowserViewState? = null
+        private var lastSeenGlobalViewState: GlobalLayoutViewState? = null
+        private var lastSeenAutoCompleteViewState: AutoCompleteViewState? = null
+        private var lastSeenSurveyViewState: SurveyViewState? = null
+
+        fun renderAutocomplete(viewState: AutoCompleteViewState) {
+<span class="nc" id="L858">            renderIfChanged(viewState, lastSeenAutoCompleteViewState) {</span>
+<span class="nc" id="L859">                lastSeenAutoCompleteViewState = viewState</span>
+
+<span class="nc bnc" id="L861" title="All 2 branches missed.">                if (viewState.showSuggestions) {</span>
+<span class="nc" id="L862">                    autoCompleteSuggestionsList.show()</span>
+<span class="nc" id="L863">                    val results = viewState.searchResults.suggestions</span>
+<span class="nc" id="L864">                    autoCompleteSuggestionsAdapter.updateData(results)</span>
+                } else {
+<span class="nc" id="L866">                    autoCompleteSuggestionsList.gone()</span>
+                }
+<span class="nc" id="L868">            }</span>
+<span class="nc" id="L869">        }</span>
+
+        fun renderOmnibar(viewState: OmnibarViewState) {
+<span class="nc" id="L872">            renderIfChanged(viewState, lastSeenOmnibarViewState) {</span>
+<span class="nc" id="L873">                lastSeenOmnibarViewState = viewState</span>
+
+<span class="nc bnc" id="L875" title="All 2 branches missed.">                if (viewState.isEditing) {</span>
+<span class="nc" id="L876">                    omniBarContainer.setBackgroundResource(R.drawable.omnibar_editing_background)</span>
+                } else {
+<span class="nc" id="L878">                    omniBarContainer.background = null</span>
+                }
+
+<span class="nc bnc" id="L881" title="All 2 branches missed.">                if (shouldUpdateOmnibarTextInput(viewState, viewState.omnibarText)) {</span>
+<span class="nc" id="L882">                    omnibarTextInput.setText(viewState.omnibarText)</span>
+<span class="nc" id="L883">                    appBarLayout.setExpanded(true, true)</span>
+                }
+<span class="nc" id="L885">            }</span>
+<span class="nc" id="L886">        }</span>
+
+        fun renderLoadingIndicator(viewState: LoadingViewState) {
+<span class="nc" id="L889">            renderIfChanged(viewState, lastSeenLoadingViewState) {</span>
+<span class="nc" id="L890">                lastSeenLoadingViewState = viewState</span>
+
+<span class="nc" id="L892">                pageLoadingIndicator.apply {</span>
+<span class="nc bnc" id="L893" title="All 2 branches missed.">                    if (viewState.isLoading) show() else hide()</span>
+<span class="nc" id="L894">                    progress = viewState.progress</span>
+<span class="nc" id="L895">                }</span>
+<span class="nc" id="L896">            }</span>
+<span class="nc" id="L897">        }</span>
+
+        fun renderGlobalViewState(viewState: GlobalLayoutViewState) {
+<span class="nc" id="L900">            renderIfChanged(viewState, lastSeenGlobalViewState) {</span>
+<span class="nc" id="L901">                lastSeenGlobalViewState = viewState</span>
+
+<span class="nc bnc" id="L903" title="All 2 branches missed.">                if (viewState.isNewTabState) {</span>
+<span class="nc" id="L904">                    browserLayout.hide()</span>
+                } else {
+<span class="nc" id="L906">                    browserLayout.show()</span>
+                }
+<span class="nc" id="L908">            }</span>
+<span class="nc" id="L909">        }</span>
+
+        fun renderBrowserViewState(viewState: BrowserViewState) {
+<span class="nc" id="L912">            renderIfChanged(viewState, lastSeenBrowserViewState) {</span>
+<span class="nc" id="L913">                lastSeenBrowserViewState = viewState</span>
+
+<span class="nc" id="L915">                val browserShowing = viewState.browserShowing</span>
+<span class="nc bnc" id="L916" title="All 2 branches missed.">                if (browserShowing) {</span>
+<span class="nc bnc" id="L917" title="All 2 branches missed.">                    webView?.show()</span>
+                } else {
+<span class="nc bnc" id="L919" title="All 2 branches missed.">                    webView?.hide()</span>
+                }
+
+<span class="nc" id="L922">                toggleDesktopSiteMode(viewState.isDesktopBrowsingMode)</span>
+<span class="nc" id="L923">                renderToolbarMenus(viewState)</span>
+<span class="nc" id="L924">                renderPopupMenus(browserShowing, viewState)</span>
+<span class="nc" id="L925">                renderFullscreenMode(viewState)</span>
+<span class="nc" id="L926">            }</span>
+<span class="nc" id="L927">        }</span>
+
+        private fun renderFullscreenMode(viewState: BrowserViewState) {
+<span class="nc bnc" id="L930" title="All 2 branches missed.">            activity?.isImmersiveModeEnabled()?.let {</span>
+<span class="nc bnc" id="L931" title="All 2 branches missed.">                if (viewState.isFullScreen) {</span>
+<span class="nc bnc" id="L932" title="All 2 branches missed.">                    if (!it) goFullScreen()</span>
+                } else {
+<span class="nc bnc" id="L934" title="All 2 branches missed.">                    if (it) exitFullScreen()</span>
+                }
+<span class="nc" id="L936">            }</span>
+<span class="nc" id="L937">        }</span>
+
+        private fun renderPopupMenus(browserShowing: Boolean, viewState: BrowserViewState) {
+<span class="nc" id="L940">            popupMenu.contentView.apply {</span>
+<span class="nc bnc" id="L941" title="All 4 branches missed.">                backPopupMenuItem.isEnabled = browserShowing &amp;&amp; viewState.canGoBack</span>
+<span class="nc bnc" id="L942" title="All 4 branches missed.">                forwardPopupMenuItem.isEnabled = browserShowing &amp;&amp; viewState.canGoForward</span>
+<span class="nc" id="L943">                refreshPopupMenuItem.isEnabled = browserShowing</span>
+<span class="nc" id="L944">                newTabPopupMenuItem.isEnabled = browserShowing</span>
+<span class="nc bnc" id="L945" title="All 2 branches missed.">                addBookmarksPopupMenuItem?.isEnabled = viewState.canAddBookmarks</span>
+<span class="nc bnc" id="L946" title="All 2 branches missed.">                sharePageMenuItem?.isEnabled = viewState.canSharePage</span>
+
+<span class="nc bnc" id="L948" title="All 2 branches missed.">                addToHome?.let {</span>
+<span class="nc bnc" id="L949" title="All 2 branches missed.">                    it.visibility = if (viewState.addToHomeVisible) VISIBLE else GONE</span>
+<span class="nc" id="L950">                    it.isEnabled = viewState.addToHomeEnabled</span>
+<span class="nc" id="L951">                }</span>
+<span class="nc" id="L952">            }</span>
+<span class="nc" id="L953">        }</span>
+
+        private fun renderToolbarMenus(viewState: BrowserViewState) {
+<span class="nc bnc" id="L956" title="All 2 branches missed.">            privacyGradeButton?.isVisible = viewState.showPrivacyGrade</span>
+<span class="nc bnc" id="L957" title="All 2 branches missed.">            clearTextButton?.isVisible = viewState.showClearButton</span>
+<span class="nc bnc" id="L958" title="All 2 branches missed.">            tabsButton?.isVisible = viewState.showTabsButton</span>
+<span class="nc bnc" id="L959" title="All 2 branches missed.">            fireMenuButton?.isVisible = viewState.showFireButton</span>
+<span class="nc bnc" id="L960" title="All 2 branches missed.">            menuButton?.isVisible = viewState.showMenuButton</span>
+<span class="nc" id="L961">        }</span>
+
+        fun renderFindInPageState(viewState: FindInPageViewState) {
+<span class="nc bnc" id="L964" title="All 2 branches missed.">            if (viewState == lastSeenFindInPageViewState) {</span>
+<span class="nc" id="L965">                return</span>
+            }
+
+<span class="nc" id="L968">            lastSeenFindInPageViewState = viewState</span>
+
+<span class="nc bnc" id="L970" title="All 2 branches missed.">            if (viewState.visible) {</span>
+<span class="nc" id="L971">                showFindInPageView(viewState)</span>
+            } else {
+<span class="nc" id="L973">                hideFindInPage()</span>
+            }
+
+<span class="nc bnc" id="L976" title="All 2 branches missed.">            popupMenu.contentView.findInPageMenuItem?.isEnabled = viewState.canFindInPage</span>
+<span class="nc" id="L977">        }</span>
+
+        fun renderTabIcon(tabs: List&lt;TabEntity&gt;) {
+<span class="nc bnc" id="L980" title="All 2 branches missed.">            context?.let {</span>
+<span class="nc bnc" id="L981" title="All 4 branches missed.">                val button = tabsButton?.actionView as TabSwitcherButton</span>
+<span class="nc" id="L982">                button.count = tabs.count()</span>
+<span class="nc bnc" id="L983" title="All 4 branches missed.">                button.hasUnread = tabs.firstOrNull { !it.viewed } != null</span>
+<span class="nc" id="L984">            }</span>
+<span class="nc" id="L985">        }</span>
+
+        fun renderSurveyViewState(viewState: BrowserTabViewModel.SurveyViewState) {
+<span class="nc" id="L988">            renderIfChanged(viewState, lastSeenSurveyViewState) {</span>
+<span class="nc" id="L989">                lastSeenSurveyViewState = viewState</span>
+<span class="nc bnc" id="L990" title="All 2 branches missed.">                val isLandscape = activity?.configuration?.isLandscape ?: false</span>
+<span class="nc" id="L991">                refreshSurveyViewState(isLandscape)</span>
+<span class="nc" id="L992">            }</span>
+<span class="nc" id="L993">        }</span>
+
+        fun refreshSurveyViewState(isLandscape: Boolean) {
+<span class="nc bnc" id="L996" title="All 2 branches missed.">            val hasSurvey = lastSeenSurveyViewState?.hasValidSurvey ?: false</span>
+<span class="nc bnc" id="L997" title="All 4 branches missed.">            if (hasSurvey &amp;&amp; !isLandscape) {</span>
+<span class="nc" id="L998">                displaySurveyCta()</span>
+            } else {
+<span class="nc" id="L1000">                hideSurveyCta()</span>
+            }
+<span class="nc" id="L1002">        }</span>
+
+        private fun displaySurveyCta() {
+<span class="nc bnc" id="L1005" title="All 2 branches missed.">            if (surveyCallToActionContainer != null) {</span>
+<span class="nc" id="L1006">                surveyCallToActionContainer.show()</span>
+<span class="nc" id="L1007">                return</span>
+            }
+<span class="nc" id="L1009">            pixel.fire(SURVEY_CTA_SHOWN)</span>
+<span class="nc" id="L1010">            callToActionStub.layoutResource = R.layout.include_survey_cta</span>
+<span class="nc" id="L1011">            val container = callToActionStub.inflate()</span>
+<span class="nc" id="L1012">            logoHidingLayoutChangeListener.callToActionButton = container</span>
+
+<span class="nc" id="L1014">            ConstraintSet().also {</span>
+<span class="nc" id="L1015">                it.clone(newTabLayout)</span>
+<span class="nc" id="L1016">                it.connect(ddgLogo.id, ConstraintSet.BOTTOM, container.id, ConstraintSet.TOP, 0)</span>
+<span class="nc" id="L1017">                it.applyTo(newTabLayout)</span>
+<span class="nc" id="L1018">            }</span>
+
+<span class="nc" id="L1020">            launchSurveyButton.setOnClickListener {</span>
+<span class="nc" id="L1021">                pixel.fire(SURVEY_CTA_LAUNCHED_SURVEY)</span>
+<span class="nc" id="L1022">                viewModel.onUserOpenedSurvey()</span>
+<span class="nc" id="L1023">            }</span>
+
+<span class="nc" id="L1025">            dismissSurveyButton.setOnClickListener {</span>
+<span class="nc" id="L1026">                pixel.fire(SURVEY_CTA_DISMISSED)</span>
+<span class="nc" id="L1027">                viewModel.onUserDismissedSurvey()</span>
+<span class="nc" id="L1028">            }</span>
+<span class="nc" id="L1029">        }</span>
+
+        private fun hideSurveyCta() {
+<span class="nc bnc" id="L1032" title="All 2 branches missed.">            if (surveyCallToActionContainer != null) {</span>
+<span class="nc" id="L1033">                surveyCallToActionContainer.gone()</span>
+            }
+<span class="nc" id="L1035">        }</span>
+
+        /**
+         * This method will execute the given lambda only if the given view states differ
+         */
+        private inline fun renderIfChanged(newViewState: Any, lastSeenViewState: Any?, block: () -&gt; Unit) {
+<span class="nc bnc" id="L1041" title="All 2 branches missed.">            if (newViewState == lastSeenViewState) {</span>
+<span class="nc" id="L1042">                Timber.v(&quot;view state identical to last seen state; skipping rendering for ${newViewState.javaClass.simpleName}&quot;)</span>
+            } else {
+<span class="nc" id="L1044">                block()</span>
+            }
+<span class="nc" id="L1046">        }</span>
+
+        fun hideFindInPage() {
+<span class="nc bnc" id="L1049" title="All 2 branches missed.">            if (findInPageContainer.visibility != View.GONE) {</span>
+<span class="nc" id="L1050">                focusDummy.requestFocus()</span>
+<span class="nc" id="L1051">                findInPageContainer.gone()</span>
+<span class="nc" id="L1052">                findInPageInput.hideKeyboard()</span>
+            }
+<span class="nc" id="L1054">        }</span>
+
+        private fun showFindInPageView(viewState: FindInPageViewState) {
+
+<span class="nc bnc" id="L1058" title="All 2 branches missed.">            if (findInPageContainer.visibility != View.VISIBLE) {</span>
+<span class="nc" id="L1059">                findInPageContainer.show()</span>
+<span class="nc" id="L1060">                findInPageInput.postDelayed(KEYBOARD_DELAY) {</span>
+                    findInPageInput?.showKeyboard()
+                }
+            }
+
+<span class="nc bnc" id="L1065" title="All 2 branches missed.">            if (viewState.showNumberMatches) {</span>
+<span class="nc" id="L1066">                findInPageMatches.text = getString(R.string.findInPageMatches, viewState.activeMatchIndex, viewState.numberMatches)</span>
+<span class="nc" id="L1067">                findInPageMatches.show()</span>
+            } else {
+<span class="nc" id="L1069">                findInPageMatches.hide()</span>
+            }
+<span class="nc" id="L1071">        }</span>
+
+        private fun toggleDesktopSiteMode(isDesktopSiteMode: Boolean) {
+<span class="nc bnc" id="L1074" title="All 4 branches missed.">            webView?.settings?.userAgentString = userAgentProvider.getUserAgent(isDesktopSiteMode)</span>
+<span class="nc" id="L1075">        }</span>
+
+        private fun goFullScreen() {
+<span class="nc" id="L1078">            Timber.i(&quot;Entering full screen&quot;)</span>
+<span class="nc" id="L1079">            webViewFullScreenContainer.show()</span>
+<span class="nc bnc" id="L1080" title="All 2 branches missed.">            activity?.toggleFullScreen()</span>
+<span class="nc" id="L1081">        }</span>
+
+        private fun exitFullScreen() {
+<span class="nc" id="L1084">            Timber.i(&quot;Exiting full screen&quot;)</span>
+<span class="nc" id="L1085">            webViewFullScreenContainer.removeAllViews()</span>
+<span class="nc" id="L1086">            webViewFullScreenContainer.gone()</span>
+<span class="nc bnc" id="L1087" title="All 2 branches missed.">            activity?.toggleFullScreen()</span>
+<span class="nc" id="L1088">        }</span>
+
+        private fun shouldUpdateOmnibarTextInput(viewState: OmnibarViewState, omnibarInput: String?) =
+<span class="nc bnc" id="L1091" title="All 4 branches missed.">            !viewState.isEditing &amp;&amp; omnibarTextInput.isDifferent(omnibarInput)</span>
+    }
+
+    val Configuration.isLandscape: Boolean
+<span class="nc bnc" id="L1095" title="All 2 branches missed.">        get() = orientation == ORIENTATION_LANDSCAPE</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

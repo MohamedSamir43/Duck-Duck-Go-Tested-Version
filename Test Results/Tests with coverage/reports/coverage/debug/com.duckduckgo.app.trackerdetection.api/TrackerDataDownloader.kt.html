@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TrackerDataDownloader.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.trackerdetection.api</a> &gt; <span class="el_source">TrackerDataDownloader.kt</span></div><h1>TrackerDataDownloader.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.trackerdetection.api
+
+import com.duckduckgo.app.global.api.isCached
+import com.duckduckgo.app.global.db.AppDatabase
+import com.duckduckgo.app.global.store.BinaryDataStore
+import com.duckduckgo.app.trackerdetection.AdBlockClient
+import com.duckduckgo.app.trackerdetection.Client
+import com.duckduckgo.app.trackerdetection.Client.ClientName.*
+import com.duckduckgo.app.trackerdetection.TrackerDataLoader
+import com.duckduckgo.app.trackerdetection.db.TrackerDataDao
+import io.reactivex.Completable
+import okhttp3.ResponseBody
+import retrofit2.Call
+import timber.log.Timber
+import java.io.IOException
+import javax.inject.Inject
+
+
+<span class="nc" id="L35">class TrackerDataDownloader @Inject constructor(</span>
+    private val trackerListService: TrackerListService,
+    private val binaryDataStore: BinaryDataStore,
+    private val trackerDataLoader: TrackerDataLoader,
+    private val trackerDataDao: TrackerDataDao,
+    private val appDatabase: AppDatabase
+) {
+
+    fun downloadList(clientName: Client.ClientName): Completable {
+
+<span class="nc bnc" id="L45" title="All 4 branches missed.">        return when (clientName) {</span>
+<span class="nc" id="L46">            DISCONNECT -&gt; downloadDisconnectList()</span>
+<span class="nc" id="L47">            TRACKERSWHITELIST -&gt; downloadAdblockList(clientName, { trackerListService.trackersWhitelist() })</span>
+<span class="nc" id="L48">            EASYLIST, EASYPRIVACY -&gt; removeLegacyList(clientName)</span>
+        }
+    }
+
+    private fun downloadDisconnectList(): Completable {
+
+<span class="nc" id="L54">        return Completable.fromAction {</span>
+
+<span class="nc" id="L56">            Timber.d(&quot;Downloading disconnect data&quot;)</span>
+
+<span class="nc" id="L58">            val call = trackerListService.disconnect()</span>
+<span class="nc" id="L59">            val response = call.execute()</span>
+
+<span class="nc bnc" id="L61" title="All 4 branches missed.">            if (response.isCached &amp;&amp; trackerDataDao.count() != 0) {</span>
+<span class="nc" id="L62">                Timber.d(&quot;Disconnect data already cached and stored&quot;)</span>
+<span class="nc" id="L63">                return@fromAction</span>
+            }
+
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            if (response.isSuccessful) {</span>
+<span class="nc" id="L67">                Timber.d(&quot;Updating disconnect data from server&quot;)</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">                val body = response.body()!!</span>
+
+<span class="nc" id="L70">                appDatabase.runInTransaction {</span>
+<span class="nc" id="L71">                    trackerDataDao.updateAll(body.trackers)</span>
+<span class="nc" id="L72">                    trackerDataLoader.loadDisconnectData()</span>
+<span class="nc" id="L73">                }</span>
+
+            } else {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">                throw IOException(&quot;Status: ${response.code()} - ${response.errorBody()?.string()}&quot;)</span>
+            }
+<span class="nc" id="L78">        }</span>
+    }
+
+    private fun downloadAdblockList(clientName: Client.ClientName, callFactory: (clientName: Client.ClientName) -&gt; Call&lt;ResponseBody&gt;): Completable {
+<span class="nc" id="L82">        return Completable.fromAction {</span>
+
+<span class="nc" id="L84">            Timber.d(&quot;Downloading ${clientName.name} data&quot;)</span>
+<span class="nc" id="L85">            val call = callFactory(clientName)</span>
+<span class="nc" id="L86">            val response = call.execute()</span>
+
+<span class="nc bnc" id="L88" title="All 4 branches missed.">            if (response.isCached &amp;&amp; binaryDataStore.hasData(clientName.name)) {</span>
+<span class="nc" id="L89">                Timber.d(&quot;${clientName.name} data already cached and stored&quot;)</span>
+<span class="nc" id="L90">                return@fromAction</span>
+            }
+
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            if (response.isSuccessful) {</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">                val bodyBytes = response.body()!!.bytes()</span>
+<span class="nc" id="L95">                Timber.d(&quot;Updating ${clientName.name} data store with new data&quot;)</span>
+<span class="nc" id="L96">                persistTrackerData(clientName, bodyBytes)</span>
+<span class="nc" id="L97">                trackerDataLoader.loadAdblockData(clientName)</span>
+            } else {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                throw IOException(&quot;Status: ${response.code()} - ${response.errorBody()?.string()}&quot;)</span>
+            }
+<span class="nc" id="L101">        }</span>
+    }
+
+    private fun persistTrackerData(clientName: Client.ClientName, bodyBytes: ByteArray) {
+<span class="nc" id="L105">        val client = AdBlockClient(clientName)</span>
+<span class="nc" id="L106">        client.loadBasicData(bodyBytes)</span>
+<span class="nc" id="L107">        binaryDataStore.saveData(clientName.name, client.getProcessedData())</span>
+<span class="nc" id="L108">    }</span>
+
+    private fun removeLegacyList(clientName: Client.ClientName): Completable {
+<span class="nc" id="L111">        return Completable.fromAction {</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            if (binaryDataStore.hasData(clientName.name)) {</span>
+<span class="nc" id="L113">                binaryDataStore.clearData(clientName.name)</span>
+            }
+<span class="nc" id="L115">            return@fromAction</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TabSwitcherActivity.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.tabs.ui</a> &gt; <span class="el_source">TabSwitcherActivity.kt</span></div><h1>TabSwitcherActivity.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.tabs.ui
+
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import androidx.lifecycle.Observer
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.global.DuckDuckGoActivity
+import com.duckduckgo.app.global.view.ClearPersonalDataAction
+import com.duckduckgo.app.global.view.FireDialog
+import com.duckduckgo.app.settings.SettingsActivity
+import com.duckduckgo.app.tabs.model.TabEntity
+import com.duckduckgo.app.tabs.ui.TabSwitcherViewModel.Command
+import com.duckduckgo.app.tabs.ui.TabSwitcherViewModel.Command.Close
+import com.duckduckgo.app.tabs.ui.TabSwitcherViewModel.Command.DisplayMessage
+import kotlinx.android.synthetic.main.content_tab_switcher.*
+import kotlinx.android.synthetic.main.include_toolbar.*
+import org.jetbrains.anko.longToast
+import javax.inject.Inject
+
+<span class="nc" id="L40">class TabSwitcherActivity : DuckDuckGoActivity(), TabSwitcherAdapter.TabSwitchedListener {</span>
+
+    @Inject
+<span class="nc bnc" id="L43" title="All 2 branches missed.">    lateinit var clearPersonalDataAction: ClearPersonalDataAction</span>
+
+<span class="nc" id="L45">    private val viewModel: TabSwitcherViewModel by bindViewModel()</span>
+
+<span class="nc" id="L47">    private val tabsAdapter = TabSwitcherAdapter(this, this)</span>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L50">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L51">        setContentView(R.layout.activity_tab_switcher)</span>
+<span class="nc" id="L52">        configureToolbar()</span>
+<span class="nc" id="L53">        configureRecycler()</span>
+<span class="nc" id="L54">        configureObservers()</span>
+<span class="nc" id="L55">    }</span>
+
+    private fun configureToolbar() {
+<span class="nc" id="L58">        setSupportActionBar(toolbar)</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        supportActionBar?.setDisplayHomeAsUpEnabled(true)</span>
+<span class="nc" id="L60">    }</span>
+
+    private fun configureRecycler() {
+<span class="nc" id="L63">        tabsRecycler.layoutManager = LinearLayoutManager(this)</span>
+<span class="nc" id="L64">        tabsRecycler.adapter = tabsAdapter</span>
+<span class="nc" id="L65">    }</span>
+
+    private fun configureObservers() {
+<span class="nc" id="L68">        viewModel.tabs.observe(this, Observer&lt;List&lt;TabEntity&gt;&gt; {</span>
+<span class="nc" id="L69">            render()</span>
+<span class="nc" id="L70">        })</span>
+<span class="nc" id="L71">        viewModel.selectedTab.observe(this, Observer&lt;TabEntity&gt; {</span>
+<span class="nc" id="L72">            render()</span>
+<span class="nc" id="L73">        })</span>
+<span class="nc" id="L74">        viewModel.command.observe(this, Observer {</span>
+<span class="nc" id="L75">            processCommand(it)</span>
+<span class="nc" id="L76">        })</span>
+<span class="nc" id="L77">    }</span>
+
+    private fun render() {
+<span class="nc" id="L80">        tabsAdapter.updateData(viewModel.tabs.value, viewModel.selectedTab.value)</span>
+<span class="nc" id="L81">    }</span>
+
+    private fun processCommand(command: Command?) {
+<span class="nc" id="L84">        when (command) {</span>
+<span class="nc bnc" id="L85" title="All 4 branches missed.">            is DisplayMessage -&gt; applicationContext?.longToast(command.messageId)</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">            is Close -&gt; finish()</span>
+        }
+<span class="nc" id="L88">    }</span>
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+<span class="nc" id="L91">        menuInflater.inflate(R.menu.menu_tab_switcher_activity, menu)</span>
+<span class="nc" id="L92">        return true</span>
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+<span class="nc bnc" id="L96" title="All 5 branches missed.">        when (item.itemId) {</span>
+<span class="nc" id="L97">            R.id.fire -&gt; onFire()</span>
+<span class="nc" id="L98">            R.id.newTab, R.id.newTabOverflow -&gt; onNewTabRequested()</span>
+<span class="nc" id="L99">            R.id.closeAllTabs -&gt; closeAllTabs()</span>
+<span class="nc" id="L100">            R.id.settings -&gt; showSettings()</span>
+        }
+<span class="nc" id="L102">        return super.onOptionsItemSelected(item)</span>
+    }
+
+    private fun onFire() {
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        val dialog = FireDialog(context = this, clearPersonalDataAction = clearPersonalDataAction)</span>
+<span class="nc" id="L107">        dialog.clearStarted = { viewModel.onClearRequested() }</span>
+<span class="nc" id="L108">        dialog.clearComplete = { viewModel.onClearComplete() }</span>
+<span class="nc" id="L109">        dialog.show()</span>
+<span class="nc" id="L110">    }</span>
+
+    override fun onNewTabRequested() {
+<span class="nc" id="L113">        viewModel.onNewTabRequested()</span>
+<span class="nc" id="L114">    }</span>
+
+    override fun onTabSelected(tab: TabEntity) {
+<span class="nc" id="L117">        viewModel.onTabSelected(tab)</span>
+<span class="nc" id="L118">    }</span>
+
+    override fun onTabDeleted(tab: TabEntity) {
+<span class="nc" id="L121">        viewModel.onTabDeleted(tab)</span>
+<span class="nc" id="L122">    }</span>
+
+    private fun closeAllTabs() {
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        viewModel.tabs.value?.forEach {</span>
+<span class="nc" id="L126">            viewModel.onTabDeleted(it)</span>
+<span class="nc" id="L127">        }</span>
+<span class="nc" id="L128">    }</span>
+
+    private fun showSettings() {
+<span class="nc" id="L131">        startActivity(SettingsActivity.intent(this))</span>
+<span class="nc" id="L132">    }</span>
+
+    override fun finish() {
+<span class="nc" id="L135">        clearObserversEarlyToStopViewUpdates()</span>
+<span class="nc" id="L136">        super.finish()</span>
+<span class="nc" id="L137">    }</span>
+
+    private fun clearObserversEarlyToStopViewUpdates() {
+<span class="nc" id="L140">        viewModel.tabs.removeObservers(this)</span>
+<span class="nc" id="L141">    }</span>
+
+<span class="nc" id="L143">    companion object {</span>
+        fun intent(context: Context): Intent {
+<span class="nc" id="L145">            return Intent(context, TabSwitcherActivity::class.java)</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

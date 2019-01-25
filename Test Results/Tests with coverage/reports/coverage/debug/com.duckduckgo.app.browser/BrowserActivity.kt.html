@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BrowserActivity.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser</a> &gt; <span class="el_source">BrowserActivity.kt</span></div><h1>BrowserActivity.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser
+
+import androidx.lifecycle.Observer
+import android.content.Context
+import android.content.Intent
+import android.content.Intent.EXTRA_TEXT
+import android.os.Bundle
+import android.widget.Toast
+import com.duckduckgo.app.bookmarks.ui.BookmarksActivity
+import com.duckduckgo.app.browser.BrowserViewModel.Command
+import com.duckduckgo.app.browser.BrowserViewModel.Command.Query
+import com.duckduckgo.app.browser.BrowserViewModel.Command.Refresh
+import com.duckduckgo.app.feedback.ui.FeedbackActivity
+import com.duckduckgo.app.global.DuckDuckGoActivity
+import com.duckduckgo.app.global.intentText
+import com.duckduckgo.app.global.view.ClearPersonalDataAction
+import com.duckduckgo.app.global.view.FireDialog
+import com.duckduckgo.app.privacy.ui.PrivacyDashboardActivity
+import com.duckduckgo.app.settings.SettingsActivity
+import com.duckduckgo.app.tabs.model.TabEntity
+import com.duckduckgo.app.tabs.ui.TabSwitcherActivity
+import org.jetbrains.anko.longToast
+import timber.log.Timber
+import javax.inject.Inject
+
+<span class="nc" id="L42">class BrowserActivity : DuckDuckGoActivity() {</span>
+
+    @Inject
+<span class="nc bnc" id="L45" title="All 2 branches missed.">    lateinit var clearPersonalDataAction: ClearPersonalDataAction</span>
+
+    private var currentTab: BrowserTabFragment? = null
+
+<span class="nc" id="L49">    private val viewModel: BrowserViewModel by bindViewModel()</span>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L52">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L53">        setContentView(R.layout.activity_browser)</span>
+
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (savedInstanceState == null) {</span>
+<span class="nc" id="L56">            launchNewSearchOrQuery(intent)</span>
+        }
+
+<span class="nc" id="L59">        configureObservers()</span>
+<span class="nc" id="L60">    }</span>
+
+    override fun onNewIntent(intent: Intent?) {
+<span class="nc" id="L63">        super.onNewIntent(intent)</span>
+<span class="nc" id="L64">        launchNewSearchOrQuery(intent)</span>
+<span class="nc" id="L65">    }</span>
+
+    private fun openNewTab(tabId: String, url: String? = null) {
+<span class="nc" id="L68">        val fragment = BrowserTabFragment.newInstance(tabId, url)</span>
+<span class="nc" id="L69">        val transaction = supportFragmentManager.beginTransaction()</span>
+<span class="nc" id="L70">        val tab = currentTab</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (tab == null) {</span>
+<span class="nc" id="L72">            transaction.replace(R.id.fragmentContainer, fragment, tabId)</span>
+        } else {
+<span class="nc" id="L74">            transaction.hide(tab)</span>
+<span class="nc" id="L75">            transaction.add(R.id.fragmentContainer, fragment, tabId)</span>
+        }
+<span class="nc" id="L77">        transaction.commit()</span>
+<span class="nc" id="L78">        currentTab = fragment</span>
+<span class="nc" id="L79">    }</span>
+
+    private fun selectTab(tab: TabEntity?) {
+
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        if (tab == null) return</span>
+
+<span class="nc bnc" id="L85" title="All 4 branches missed.">        if (tab.tabId == currentTab?.tabId) return</span>
+
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        val fragment = supportFragmentManager.findFragmentByTag(tab.tabId) as? BrowserTabFragment</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        if (fragment == null) {</span>
+<span class="nc" id="L89">            openNewTab(tab.tabId, tab.url)</span>
+<span class="nc" id="L90">            return</span>
+        }
+<span class="nc" id="L92">        val transaction = supportFragmentManager.beginTransaction()</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        currentTab?.let {</span>
+<span class="nc" id="L94">            transaction.hide(it)</span>
+        }
+<span class="nc" id="L96">        transaction.show(fragment)</span>
+<span class="nc" id="L97">        transaction.commit()</span>
+<span class="nc" id="L98">        currentTab = fragment</span>
+<span class="nc" id="L99">    }</span>
+
+    private fun removeTabs(fragments: List&lt;BrowserTabFragment&gt;) {
+<span class="nc" id="L102">        val transaction = supportFragmentManager.beginTransaction()</span>
+<span class="nc" id="L103">        fragments.forEach { transaction.remove(it) }</span>
+<span class="nc" id="L104">        transaction.commit()</span>
+<span class="nc" id="L105">    }</span>
+
+    private fun launchNewSearchOrQuery(intent: Intent?) {
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (intent == null) {</span>
+<span class="nc" id="L109">            return</span>
+        }
+
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (intent.getBooleanExtra(PERFORM_FIRE_ON_ENTRY_EXTRA, false)) {</span>
+<span class="nc" id="L113">            viewModel.onClearRequested()</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">            clearPersonalDataAction.clear()</span>
+<span class="nc" id="L115">            return</span>
+        }
+
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        if (intent.getBooleanExtra(LAUNCHED_FROM_FIRE_EXTRA, false)) {</span>
+<span class="nc" id="L119">            Timber.i(&quot;Launched from fire&quot;)</span>
+<span class="nc" id="L120">            Toast.makeText(applicationContext, R.string.fireDataCleared, Toast.LENGTH_LONG).show()</span>
+        }
+
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (launchNewSearch(intent)) {</span>
+<span class="nc" id="L124">            viewModel.onNewTabRequested()</span>
+<span class="nc" id="L125">            return</span>
+        }
+
+<span class="nc" id="L128">        val sharedText = intent.intentText</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (sharedText != null) {</span>
+<span class="nc" id="L130">            viewModel.onOpenInNewTabRequested(sharedText)</span>
+        }
+<span class="nc" id="L132">    }</span>
+
+    private fun configureObservers() {
+<span class="nc" id="L135">        viewModel.command.observe(this, Observer {</span>
+<span class="nc" id="L136">            processCommand(it)</span>
+<span class="nc" id="L137">        })</span>
+<span class="nc" id="L138">        viewModel.selectedTab.observe(this, Observer {</span>
+<span class="nc" id="L139">            selectTab(it)</span>
+<span class="nc" id="L140">        })</span>
+<span class="nc" id="L141">        viewModel.tabs.observe(this, Observer {</span>
+<span class="nc" id="L142">            clearStaleTabs(it)</span>
+<span class="nc" id="L143">            viewModel.onTabsUpdated(it)</span>
+<span class="nc" id="L144">        })</span>
+<span class="nc" id="L145">    }</span>
+
+    private fun clearStaleTabs(updatedTabs: List&lt;TabEntity&gt;?) {
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (updatedTabs == null) {</span>
+<span class="nc" id="L149">            return</span>
+        }
+
+<span class="nc" id="L152">        val stale = supportFragmentManager</span>
+<span class="nc bnc" id="L153" title="All 4 branches missed.">            .fragments.mapNotNull { it as? BrowserTabFragment }</span>
+<span class="nc bnc" id="L154" title="All 4 branches missed.">            .filter { fragment -&gt; updatedTabs.none { it.tabId == fragment.tabId } }</span>
+
+<span class="nc bnc" id="L156" title="All 4 branches missed.">        if (stale.isNotEmpty()) {</span>
+<span class="nc" id="L157">            removeTabs(stale)</span>
+        }
+<span class="nc" id="L159">    }</span>
+
+    private fun processCommand(command: Command?) {
+<span class="nc" id="L162">        Timber.i(&quot;Processing command: $command&quot;)</span>
+<span class="nc" id="L163">        when (command) {</span>
+<span class="nc bnc" id="L164" title="All 4 branches missed.">            is Query -&gt; currentTab?.submitQuery(command.query)</span>
+<span class="nc bnc" id="L165" title="All 4 branches missed.">            is Refresh -&gt; currentTab?.refresh()</span>
+<span class="nc bnc" id="L166" title="All 4 branches missed.">            is Command.DisplayMessage -&gt; applicationContext?.longToast(command.messageId)</span>
+        }
+<span class="nc" id="L168">    }</span>
+
+    private fun launchNewSearch(intent: Intent): Boolean {
+<span class="nc bnc" id="L171" title="All 4 branches missed.">        return intent.getBooleanExtra(NEW_SEARCH_EXTRA, false) || intent.action == Intent.ACTION_ASSIST</span>
+    }
+
+    fun launchPrivacyDashboard() {
+<span class="nc bnc" id="L175" title="All 4 branches missed.">        currentTab?.tabId?.let {</span>
+<span class="nc" id="L176">            startActivityForResult(PrivacyDashboardActivity.intent(this, it), DASHBOARD_REQUEST_CODE)</span>
+<span class="nc" id="L177">        }</span>
+<span class="nc" id="L178">    }</span>
+
+    fun launchFire() {
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        val dialog = FireDialog(context = this, clearPersonalDataAction = clearPersonalDataAction)</span>
+<span class="nc" id="L182">        dialog.clearStarted = { viewModel.onClearRequested() }</span>
+<span class="nc" id="L183">        dialog.clearComplete = { viewModel.onClearComplete() }</span>
+<span class="nc" id="L184">        dialog.show()</span>
+<span class="nc" id="L185">    }</span>
+
+    fun launchTabSwitcher() {
+<span class="nc" id="L188">        startActivity(TabSwitcherActivity.intent(this))</span>
+<span class="nc" id="L189">    }</span>
+
+    fun launchNewTab() {
+<span class="nc" id="L192">        viewModel.onNewTabRequested()</span>
+<span class="nc" id="L193">    }</span>
+
+    fun openInNewTab(query: String) {
+<span class="nc" id="L196">        viewModel.onOpenInNewTabRequested(query)</span>
+<span class="nc" id="L197">    }</span>
+
+    fun launchBrokenSiteFeedback(url: String?) {
+<span class="nc" id="L200">        startActivity(FeedbackActivity.intent(this, true, url))</span>
+<span class="nc" id="L201">    }</span>
+
+    fun launchSettings() {
+<span class="nc" id="L204">        startActivity(SettingsActivity.intent(this))</span>
+<span class="nc" id="L205">    }</span>
+
+    fun launchBookmarks() {
+<span class="nc" id="L208">        startActivity(BookmarksActivity.intent(this))</span>
+<span class="nc" id="L209">    }</span>
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if (requestCode == DASHBOARD_REQUEST_CODE) {</span>
+<span class="nc" id="L213">            viewModel.receivedDashboardResult(resultCode)</span>
+        } else {
+<span class="nc" id="L215">            super.onActivityResult(requestCode, resultCode, data)</span>
+        }
+<span class="nc" id="L217">    }</span>
+
+    override fun onBackPressed() {
+<span class="nc bnc" id="L220" title="All 4 branches missed.">        if (currentTab?.onBackPressed() != true) {</span>
+<span class="nc" id="L221">            super.onBackPressed()</span>
+        }
+<span class="nc" id="L223">    }</span>
+
+<span class="nc" id="L225">    companion object {</span>
+
+        fun intent(context: Context, queryExtra: String? = null, newSearch: Boolean = false, launchedFromFireAction: Boolean = false): Intent {
+<span class="nc" id="L228">            val intent = Intent(context, BrowserActivity::class.java)</span>
+<span class="nc" id="L229">            intent.putExtra(EXTRA_TEXT, queryExtra)</span>
+<span class="nc" id="L230">            intent.putExtra(NEW_SEARCH_EXTRA, newSearch)</span>
+<span class="nc" id="L231">            intent.putExtra(LAUNCHED_FROM_FIRE_EXTRA, launchedFromFireAction)</span>
+<span class="nc" id="L232">            return intent</span>
+        }
+
+        const val NEW_SEARCH_EXTRA = &quot;NEW_SEARCH_EXTRA&quot;
+        const val PERFORM_FIRE_ON_ENTRY_EXTRA = &quot;PERFORM_FIRE_ON_ENTRY_EXTRA&quot;
+        const val LAUNCHED_FROM_FIRE_EXTRA = &quot;LAUNCHED_FROM_FIRE_EXTRA&quot;
+        private const val DASHBOARD_REQUEST_CODE = 100
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

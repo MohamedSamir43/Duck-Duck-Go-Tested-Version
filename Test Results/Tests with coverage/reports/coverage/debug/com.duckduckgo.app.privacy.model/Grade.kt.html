@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Grade.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.privacy.model</a> &gt; <span class="el_source">Grade.kt</span></div><h1>Grade.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.privacy.model
+
+import com.duckduckgo.app.privacy.model.Grade.Grading.*
+import com.squareup.moshi.Json
+
+<span class="fc" id="L22">class Grade {</span>
+
+<span class="fc" id="L24">    enum class Grading {</span>
+
+        A,
+        @Json(name = &quot;B+&quot;)
+        B_PLUS,
+        B,
+        @Json(name = &quot;C+&quot;)
+        C_PLUS,
+        C,
+        D,
+        @Json(name = &quot;D-&quot;)
+        D_MINUS
+
+    }
+
+
+<span class="fc" id="L40">    data class Score(</span>
+<span class="nc" id="L41">        val grade: Grading,</span>
+<span class="nc" id="L42">        val score: Int,</span>
+<span class="nc" id="L43">        val httpsScore: Int,</span>
+<span class="nc" id="L44">        val trackerScore: Int,</span>
+<span class="nc" id="L45">        val privacyScore: Int</span>
+    )
+
+<span class="fc" id="L48">    data class Scores(</span>
+<span class="fc" id="L49">        val site: Score,</span>
+<span class="nc" id="L50">        val enhanced: Score</span>
+    )
+
+<span class="fc" id="L53">    var https: Boolean = false</span>
+<span class="pc" id="L54">    var httpsAutoUpgrade: Boolean = false</span>
+<span class="pc" id="L55">    var privacyScore: Int? = null</span>
+
+<span class="fc" id="L57">    val scores: Grade.Scores get() = calculate()</span>
+
+<span class="fc" id="L59">    private var entitiesNotBlocked: MutableMap&lt;String, Double&gt; = mutableMapOf()</span>
+<span class="fc" id="L60">    private var entitiesBlocked: MutableMap&lt;String, Double&gt; = mutableMapOf()</span>
+
+    private fun calculate(): Grade.Scores {
+
+        // HTTPS
+        val siteHttpsScore: Int
+        val enhancedHttpsScore: Int
+
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (httpsAutoUpgrade) {</span>
+<span class="fc" id="L69">            siteHttpsScore = 0</span>
+<span class="fc" id="L70">            enhancedHttpsScore = 0</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        } else if (https) {</span>
+<span class="fc" id="L72">            siteHttpsScore = 3</span>
+<span class="fc" id="L73">            enhancedHttpsScore = 0</span>
+        } else {
+<span class="fc" id="L75">            siteHttpsScore = 10</span>
+<span class="fc" id="L76">            enhancedHttpsScore = 10</span>
+        }
+
+        // PRIVACY
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        val privacyScore = Math.min(privacyScore ?: UNKNOWN_PRIVACY_SCORE, MAX_PRIVACY_SCORE)</span>
+
+        // TRACKERS
+<span class="fc" id="L83">        val enhancedTrackerScore = trackerScore(entitiesNotBlocked)</span>
+<span class="fc" id="L84">        val siteTrackerScore = trackerScore(entitiesBlocked) + enhancedTrackerScore</span>
+
+        // TOTALS
+<span class="fc" id="L87">        val siteTotalScore = siteHttpsScore + siteTrackerScore + privacyScore</span>
+<span class="fc" id="L88">        val enhancedTotalScore = enhancedHttpsScore + enhancedTrackerScore + privacyScore</span>
+
+        // GRADES
+<span class="fc" id="L91">        val siteGrade = gradeForScore(siteTotalScore)</span>
+<span class="fc" id="L92">        val enhancedGrade = gradeForScore(enhancedTotalScore)</span>
+
+<span class="fc" id="L94">        val site = Score(</span>
+<span class="fc" id="L95">            grade = siteGrade,</span>
+<span class="fc" id="L96">            httpsScore = siteHttpsScore,</span>
+<span class="fc" id="L97">            privacyScore = privacyScore,</span>
+<span class="fc" id="L98">            score = siteTotalScore,</span>
+<span class="fc" id="L99">            trackerScore = siteTrackerScore</span>
+        )
+
+<span class="fc" id="L102">        val enhanced = Score(</span>
+<span class="fc" id="L103">            grade = enhancedGrade,</span>
+<span class="fc" id="L104">            httpsScore = enhancedHttpsScore,</span>
+<span class="fc" id="L105">            privacyScore = privacyScore,</span>
+<span class="fc" id="L106">            score = enhancedTotalScore,</span>
+<span class="fc" id="L107">            trackerScore = enhancedTrackerScore</span>
+        )
+
+<span class="fc" id="L110">        return Scores(site = site, enhanced = enhanced)</span>
+    }
+
+    private fun gradeForScore(score: Int): Grading {
+<span class="fc" id="L114">        return when {</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">            score &lt;= 1 -&gt; A</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">            score &lt;= 3 -&gt; B_PLUS</span>
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            score &lt;= 9 -&gt; B</span>
+<span class="fc bfc" id="L118" title="All 2 branches covered.">            score &lt;= 13 -&gt; C_PLUS</span>
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            score &lt;= 19 -&gt; C</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">            score &lt;= 29 -&gt; D</span>
+<span class="fc" id="L121">            else -&gt; D_MINUS</span>
+        }
+    }
+
+    private fun trackerScore(entities: Map&lt;String, Double&gt;): Int {
+<span class="fc" id="L126">        return entities.entries.fold(0) { acc, entry -&gt;</span>
+<span class="fc" id="L127">            acc + scoreFromPrevalence(entry.value)</span>
+        }
+    }
+
+    private fun scoreFromPrevalence(prevalence: Double): Int {
+<span class="fc" id="L132">        return when {</span>
+<span class="fc bfc" id="L133" title="All 2 branches covered.">            prevalence &lt;= 0.0 -&gt; 0</span>
+<span class="fc bfc" id="L134" title="All 2 branches covered.">            prevalence &lt;= 0.1 -&gt; 1</span>
+<span class="fc bfc" id="L135" title="All 2 branches covered.">            prevalence &lt;= 1.0 -&gt; 2</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">            prevalence &lt;= 5.0 -&gt; 3</span>
+<span class="fc bfc" id="L137" title="All 2 branches covered.">            prevalence &lt;= 10.0 -&gt; 4</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            prevalence &lt;= 15.0 -&gt; 5</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">            prevalence &lt;= 20.0 -&gt; 6</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">            prevalence &lt;= 30.0 -&gt; 7</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">            prevalence &lt;= 45.0 -&gt; 8</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">            prevalence &lt;= 66.0 -&gt; 9</span>
+<span class="fc" id="L143">            else -&gt; 10</span>
+        }
+    }
+
+    fun setParentEntityAndPrevalence(parentEntity: String?, prevalence: Double?) {
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        parentEntity ?: return</span>
+<span class="fc" id="L149">        addEntityNotBlocked(parentEntity, prevalence)</span>
+<span class="fc" id="L150">    }</span>
+
+    fun addEntityNotBlocked(entity: String, prevalence: Double?) {
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">        prevalence ?: return</span>
+<span class="fc" id="L154">        entitiesNotBlocked[entity] = prevalence</span>
+<span class="fc" id="L155">    }</span>
+
+    fun addEntityBlocked(entity: String, prevalence: Double?) {
+<span class="fc bfc" id="L158" title="All 2 branches covered.">        prevalence ?: return</span>
+<span class="fc" id="L159">        entitiesBlocked[entity] = prevalence</span>
+<span class="fc" id="L160">    }</span>
+
+<span class="fc" id="L162">    companion object {</span>
+
+        const val UNKNOWN_PRIVACY_SCORE = 2
+        const val MAX_PRIVACY_SCORE = 10
+
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TabDataRepository.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.tabs.model</a> &gt; <span class="el_source">TabDataRepository.kt</span></div><h1>TabDataRepository.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.tabs.model
+
+
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import android.net.Uri
+import com.duckduckgo.app.global.model.Site
+import com.duckduckgo.app.global.model.SiteFactory
+import com.duckduckgo.app.tabs.db.TabsDao
+import io.reactivex.schedulers.Schedulers
+import java.util.*
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+<span class="fc" id="L32">class TabDataRepository @Inject constructor(private val tabsDao: TabsDao, private val siteFactory: SiteFactory) : TabRepository {</span>
+
+<span class="pc" id="L34">    override val liveTabs: LiveData&lt;List&lt;TabEntity&gt;&gt; = tabsDao.liveTabs()</span>
+
+<span class="pc" id="L36">    override val liveSelectedTab: LiveData&lt;TabEntity&gt; = tabsDao.liveSelectedTab()</span>
+
+<span class="fc" id="L38">    private val siteData: LinkedHashMap&lt;String, MutableLiveData&lt;Site&gt;&gt; = LinkedHashMap()</span>
+
+    override fun add(url: String?): String {
+<span class="fc" id="L41">        val tabId = generateTabId()</span>
+<span class="fc" id="L42">        add(tabId, buildSiteData(url))</span>
+<span class="fc" id="L43">        return tabId</span>
+    }
+
+<span class="fc" id="L46">    private fun generateTabId() = UUID.randomUUID().toString()</span>
+
+    private fun buildSiteData(url: String?): MutableLiveData&lt;Site&gt; {
+<span class="fc" id="L49">        val data = MutableLiveData&lt;Site&gt;()</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        url?.let {</span>
+<span class="fc" id="L51">            val siteMonitor = siteFactory.build(it)</span>
+<span class="fc" id="L52">            data.value = siteMonitor</span>
+<span class="fc" id="L53">        }</span>
+<span class="fc" id="L54">        return data</span>
+    }
+
+    override fun add(tabId: String, data: MutableLiveData&lt;Site&gt;) {
+<span class="fc" id="L58">        siteData[tabId] = data</span>
+<span class="fc" id="L59">        Schedulers.io().scheduleDirect {</span>
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            val position = tabsDao.lastTab()?.position ?: 0</span>
+<span class="fc bfc" id="L61" title="All 4 branches covered.">            tabsDao.addAndSelectTab(TabEntity(tabId, data.value?.url, data.value?.title, true, position))</span>
+<span class="fc" id="L62">        }</span>
+<span class="fc" id="L63">    }</span>
+
+    override fun addNewTabAfterExistingTab(url: String?, tabId: String) {
+<span class="fc" id="L66">        Schedulers.io().scheduleDirect {</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">            val position = tabsDao.tab(tabId)?.position ?: -1</span>
+<span class="fc" id="L68">            val uri = Uri.parse(url)</span>
+<span class="pc bpc" id="L69" title="2 of 4 branches missed.">            val title = uri.host?.removePrefix(&quot;www.&quot;) ?: url</span>
+<span class="fc" id="L70">            val tab = TabEntity(generateTabId(), url, title, false, position + 1)</span>
+<span class="fc" id="L71">            tabsDao.insertTabAtPosition(tab)</span>
+<span class="fc" id="L72">        }</span>
+<span class="fc" id="L73">    }</span>
+
+    override fun update(tabId: String, site: Site?) {
+<span class="fc" id="L76">        Schedulers.io().scheduleDirect {</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            val position = tabsDao.tab(tabId)?.position ?: 0</span>
+<span class="pc bpc" id="L78" title="2 of 4 branches missed.">            val tab = TabEntity(tabId, site?.url, site?.title, true, position)</span>
+<span class="fc" id="L79">            tabsDao.updateTab(tab)</span>
+<span class="fc" id="L80">        }</span>
+<span class="fc" id="L81">    }</span>
+
+    override fun retrieveSiteData(tabId: String): MutableLiveData&lt;Site&gt; {
+<span class="fc" id="L84">        val storedData = siteData[tabId]</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (storedData != null) {</span>
+<span class="fc" id="L86">            return storedData</span>
+        }
+
+<span class="fc" id="L89">        val data = MutableLiveData&lt;Site&gt;()</span>
+<span class="fc" id="L90">        siteData[tabId] = data</span>
+<span class="fc" id="L91">        return data</span>
+    }
+
+    override fun delete(tab: TabEntity) {
+<span class="fc" id="L95">        Schedulers.io().scheduleDirect {</span>
+<span class="fc" id="L96">            tabsDao.deleteTabAndUpdateSelection(tab)</span>
+<span class="fc" id="L97">        }</span>
+<span class="fc" id="L98">        siteData.remove(tab.tabId)</span>
+<span class="fc" id="L99">    }</span>
+
+    override fun deleteAll() {
+<span class="fc" id="L102">        Schedulers.io().scheduleDirect {</span>
+<span class="fc" id="L103">            tabsDao.deleteAllTabs()</span>
+<span class="fc" id="L104">        }</span>
+<span class="fc" id="L105">        siteData.clear()</span>
+<span class="fc" id="L106">    }</span>
+
+    override fun select(tabId: String) {
+<span class="fc" id="L109">        Schedulers.io().scheduleDirect {</span>
+<span class="fc" id="L110">            val selection = TabSelectionEntity(tabId = tabId)</span>
+<span class="fc" id="L111">            tabsDao.insertTabSelection(selection)</span>
+<span class="fc" id="L112">        }</span>
+<span class="fc" id="L113">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

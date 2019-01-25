@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SettingsActivity.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.settings</a> &gt; <span class="el_source">SettingsActivity.kt</span></div><h1>SettingsActivity.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.settings
+
+import androidx.lifecycle.Observer
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.Bundle
+import androidx.appcompat.widget.SwitchCompat
+import android.view.View
+import android.widget.CompoundButton.OnCheckedChangeListener
+import com.duckduckgo.app.about.AboutDuckDuckGoActivity
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.feedback.ui.FeedbackActivity
+import com.duckduckgo.app.global.DuckDuckGoActivity
+import com.duckduckgo.app.global.sendThemeChangedBroadcast
+import com.duckduckgo.app.global.view.launchDefaultAppActivity
+import com.duckduckgo.app.onboarding.ui.OnboardingActivity
+import com.duckduckgo.app.settings.SettingsViewModel.Command
+import kotlinx.android.synthetic.main.content_settings.*
+import kotlinx.android.synthetic.main.include_toolbar.*
+
+<span class="nc" id="L38">class SettingsActivity : DuckDuckGoActivity() {</span>
+
+<span class="nc" id="L40">    private val viewModel: SettingsViewModel by bindViewModel()</span>
+
+<span class="nc" id="L42">    private val defaultBrowserChangeListener = OnCheckedChangeListener { _, _ -&gt; launchDefaultAppScreen() }</span>
+
+<span class="nc" id="L44">    private val lightThemeToggleListener = OnCheckedChangeListener { _, isChecked -&gt;</span>
+<span class="nc" id="L45">        viewModel.onLightThemeToggled(isChecked)</span>
+<span class="nc" id="L46">    }</span>
+
+<span class="nc" id="L48">    private val autocompleteToggleListener = OnCheckedChangeListener { _, isChecked -&gt;</span>
+<span class="nc" id="L49">        viewModel.onAutocompleteSettingChanged(isChecked)</span>
+<span class="nc" id="L50">    }</span>
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+<span class="nc" id="L53">        super.onCreate(savedInstanceState)</span>
+<span class="nc" id="L54">        setContentView(R.layout.activity_settings)</span>
+<span class="nc" id="L55">        setupActionBar()</span>
+
+<span class="nc" id="L57">        configureUiEventHandlers()</span>
+<span class="nc" id="L58">        observeViewModel()</span>
+<span class="nc" id="L59">    }</span>
+
+    override fun onStart() {
+<span class="nc" id="L62">        super.onStart()</span>
+<span class="nc" id="L63">        viewModel.start()</span>
+<span class="nc" id="L64">    }</span>
+
+    private fun configureUiEventHandlers() {
+<span class="nc" id="L67">        onboarding.setOnClickListener { startActivity(OnboardingActivity.intent(this)) }</span>
+<span class="nc" id="L68">        about.setOnClickListener { startActivity(AboutDuckDuckGoActivity.intent(this)) }</span>
+<span class="nc" id="L69">        provideFeedback.setOnClickListener { viewModel.userRequestedToSendFeedback() }</span>
+<span class="nc" id="L70">        lightThemeToggle.setOnCheckedChangeListener(lightThemeToggleListener)</span>
+<span class="nc" id="L71">        autocompleteToggle.setOnCheckedChangeListener(autocompleteToggleListener)</span>
+<span class="nc" id="L72">        setAsDefaultBrowserSetting.setOnCheckedChangeListener(defaultBrowserChangeListener)</span>
+<span class="nc" id="L73">    }</span>
+
+    private fun observeViewModel() {
+<span class="nc" id="L76">        viewModel.viewState.observe(this, Observer&lt;SettingsViewModel.ViewState&gt; { viewState -&gt;</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            viewState?.let {</span>
+<span class="nc" id="L78">                version.text = it.version</span>
+<span class="nc" id="L79">                lightThemeToggle.quietlySetIsChecked(it.lightThemeEnabled, lightThemeToggleListener)</span>
+<span class="nc" id="L80">                autocompleteToggle.quietlySetIsChecked(it.autoCompleteSuggestionsEnabled, autocompleteToggleListener)</span>
+<span class="nc" id="L81">                updateDefaultBrowserViewVisibility(it)</span>
+<span class="nc" id="L82">            }</span>
+<span class="nc" id="L83">        })</span>
+
+<span class="nc" id="L85">        viewModel.command.observe(this, Observer {</span>
+<span class="nc" id="L86">            processCommand(it)</span>
+<span class="nc" id="L87">        })</span>
+<span class="nc" id="L88">    }</span>
+
+    private fun processCommand(it: Command?) {
+<span class="nc" id="L91">        when (it) {</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            is Command.LaunchFeedback -&gt; launchFeedback()</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            is Command.UpdateTheme -&gt; sendThemeChangedBroadcast()</span>
+        }
+<span class="nc" id="L95">    }</span>
+
+    private fun updateDefaultBrowserViewVisibility(it: SettingsViewModel.ViewState) {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (it.showDefaultBrowserSetting) {</span>
+<span class="nc" id="L99">            setAsDefaultBrowserSetting.quietlySetIsChecked(it.isAppDefaultBrowser, defaultBrowserChangeListener)</span>
+<span class="nc" id="L100">            setAsDefaultBrowserSetting.visibility = View.VISIBLE</span>
+        } else {
+<span class="nc" id="L102">            setAsDefaultBrowserSetting.visibility = View.GONE</span>
+        }
+<span class="nc" id="L104">    }</span>
+
+    private fun launchDefaultAppScreen() {
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.N) {</span>
+<span class="nc" id="L108">            launchDefaultAppActivity()</span>
+        } else {
+<span class="nc" id="L110">            throw IllegalStateException(&quot;Unable to launch default app activity on this OS&quot;)</span>
+        }
+<span class="nc" id="L112">    }</span>
+
+    private fun setupActionBar() {
+<span class="nc" id="L115">        setSupportActionBar(toolbar)</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        supportActionBar?.setDisplayHomeAsUpEnabled(true)</span>
+<span class="nc" id="L117">    }</span>
+
+    private fun launchFeedback() {
+<span class="nc" id="L120">        startActivity(Intent(FeedbackActivity.intent(this)))</span>
+<span class="nc" id="L121">    }</span>
+
+<span class="nc" id="L123">    companion object {</span>
+        fun intent(context: Context): Intent {
+<span class="nc" id="L125">            return Intent(context, SettingsActivity::class.java)</span>
+        }
+    }
+}
+
+/**
+ * Utility method to toggle a switch without broadcasting to its change listener
+ *
+ * This is useful for when setting the checked state from the view model where we want the switch state to match some value, but this act itself
+ * should not result in the checked change event handler being fired
+ *
+ * Requires the change listener to be provided explicitly as it is held privately in the super class and cannot be accessed automatically.
+ */
+private fun SwitchCompat.quietlySetIsChecked(newCheckedState: Boolean, changeListener: OnCheckedChangeListener?) {
+<span class="nc" id="L139">    setOnCheckedChangeListener(null)</span>
+<span class="nc" id="L140">    isChecked = newCheckedState</span>
+<span class="nc" id="L141">    setOnCheckedChangeListener(changeListener)</span>
+<span class="nc" id="L142">}</span>
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

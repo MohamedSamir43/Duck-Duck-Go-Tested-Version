@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HttpsUpgrader.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.httpsupgrade</a> &gt; <span class="el_source">HttpsUpgrader.kt</span></div><h1>HttpsUpgrader.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.httpsupgrade
+
+import android.net.Uri
+import androidx.annotation.WorkerThread
+import com.duckduckgo.app.global.UrlScheme
+import com.duckduckgo.app.global.isHttps
+import com.duckduckgo.app.httpsupgrade.api.HttpsBloomFilterFactory
+import com.duckduckgo.app.httpsupgrade.db.HttpsWhitelistDao
+import timber.log.Timber
+import java.util.concurrent.locks.ReentrantLock
+
+interface HttpsUpgrader {
+
+    @WorkerThread
+    fun shouldUpgrade(uri: Uri): Boolean
+
+    @WorkerThread
+    fun isInUpgradeList(uri: Uri): Boolean
+
+    fun upgrade(uri: Uri): Uri {
+<span class="nc" id="L37">        return uri.buildUpon().scheme(UrlScheme.https).build()</span>
+    }
+
+    @WorkerThread
+    fun reloadData()
+}
+
+<span class="pc" id="L44">class HttpsUpgraderImpl(</span>
+    private val whitelistedDao: HttpsWhitelistDao,
+    private val bloomFactory: HttpsBloomFilterFactory
+) : HttpsUpgrader {
+
+    private var httpsBloomFilter: BloomFilter? = null
+<span class="fc" id="L50">    private val dataReloadLock = ReentrantLock()</span>
+
+    @WorkerThread
+    override fun shouldUpgrade(uri: Uri): Boolean {
+
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (uri.isHttps) {</span>
+<span class="fc" id="L56">            return false</span>
+        }
+
+<span class="fc" id="L59">        return isInUpgradeList(uri)</span>
+    }
+
+    @WorkerThread
+    override fun isInUpgradeList(uri: Uri): Boolean {
+
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        val host = uri.host ?: return false</span>
+
+<span class="fc" id="L67">        waitForAnyReloadsToComplete()</span>
+
+<span class="fc bfc" id="L69" title="All 2 branches covered.">        if (whitelistedDao.contains(host)) {</span>
+<span class="fc" id="L70">            Timber.d(&quot;$host is in whitelist and so not upgradable&quot;)</span>
+<span class="fc" id="L71">            return false</span>
+        }
+
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        httpsBloomFilter?.let {</span>
+
+<span class="fc" id="L76">            val initialTime = System.nanoTime()</span>
+<span class="fc" id="L77">            val shouldUpgrade = it.contains(host)</span>
+<span class="fc" id="L78">            val totalTime = System.nanoTime() - initialTime</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            Timber.d(&quot;$host ${if (shouldUpgrade) &quot;is&quot; else &quot;is not&quot;} upgradable, lookup in ${totalTime / NANO_TO_MILLIS_DIVISOR}ms&quot;)</span>
+
+<span class="fc" id="L81">            return shouldUpgrade</span>
+        }
+
+<span class="nc" id="L84">        return false</span>
+    }
+
+    private fun waitForAnyReloadsToComplete() {
+        // wait for lock (by locking and unlocking) before continuing
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (dataReloadLock.isLocked) {</span>
+<span class="nc" id="L90">            dataReloadLock.lock()</span>
+<span class="nc" id="L91">            dataReloadLock.unlock()</span>
+        }
+<span class="fc" id="L93">    }</span>
+
+    @WorkerThread
+    override fun reloadData() {
+<span class="fc" id="L97">        dataReloadLock.lock()</span>
+<span class="fc" id="L98">        httpsBloomFilter = bloomFactory.create()</span>
+<span class="fc" id="L99">        dataReloadLock.unlock()</span>
+<span class="fc" id="L100">    }</span>
+
+<span class="fc" id="L102">    companion object {</span>
+        const val NANO_TO_MILLIS_DIVISOR = 1_000_000.0
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

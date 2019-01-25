@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LegacyDb.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.migration.legacy</a> &gt; <span class="el_source">LegacyDb.java</span></div><h1>LegacyDb.java</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.migration.legacy;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+import android.preference.PreferenceManager;
+
+import java.io.Closeable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class LegacyDb implements Closeable {
+
+    private SQLiteDatabase db;
+
+
+<span class="fc" id="L37">    public LegacyDb(Context context) {</span>
+<span class="fc" id="L38">        OpenHelper openHelper = new OpenHelper(context);</span>
+<span class="fc" id="L39">        this.db = openHelper.getWritableDatabase();</span>
+<span class="fc" id="L40">    }</span>
+
+    public void deleteAll() {
+<span class="fc" id="L43">        this.db.delete(LegacyDbContracts.FEED_TABLE.TABLE_NAME, null, null);</span>
+<span class="fc" id="L44">        this.db.delete(LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME, null, null);</span>
+<span class="fc" id="L45">    }</span>
+
+    private LegacyFeedObject getFeedObject(Cursor c) {
+<span class="fc" id="L48">        final String id = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE._ID));</span>
+<span class="fc" id="L49">        final String title = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_TITLE));</span>
+<span class="fc" id="L50">        final String description = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_DESCRIPTION));</span>
+<span class="fc" id="L51">        final String feed = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_FEED));</span>
+<span class="fc" id="L52">        final String url = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_URL));</span>
+<span class="fc" id="L53">        final String imageurl = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_IMAGE_URL));</span>
+<span class="fc" id="L54">        final String favicon = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_FAVICON));</span>
+<span class="fc" id="L55">        final String timestamp = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_TIMESTAMP));</span>
+<span class="fc" id="L56">        final String category = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_CATEGORY));</span>
+<span class="fc" id="L57">        final String type = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_TYPE));</span>
+<span class="fc" id="L58">        final String articleurl = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_ARTICLE_URL));</span>
+<span class="fc" id="L59">        final String hidden = c.getString(c.getColumnIndex(LegacyDbContracts.FEED_TABLE.COLUMN_HIDDEN));</span>
+<span class="fc" id="L60">        return new LegacyFeedObject(id, title, description, feed, url, imageurl, favicon, timestamp, category, type, articleurl, &quot;&quot;, hidden);</span>
+    }
+
+    public ArrayList&lt;LegacyFeedObject&gt; selectAll() {
+<span class="fc" id="L64">        ArrayList&lt;LegacyFeedObject&gt; feeds = null;</span>
+<span class="fc" id="L65">        Cursor c = null;</span>
+        try {
+<span class="fc" id="L67">            c = this.db.query(LegacyDbContracts.FEED_TABLE.TABLE_NAME, null, &quot;&quot;, null, null, null, null);</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">            if (c.moveToFirst()) {</span>
+<span class="fc" id="L69">                feeds = new ArrayList&lt;&gt;(30);</span>
+                do {
+<span class="fc" id="L71">                    feeds.add(getFeedObject(c));</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">                } while (c.moveToNext());</span>
+            }
+        } finally {
+<span class="pc bpc" id="L75" title="3 of 4 branches missed.">            if (c != null) {</span>
+<span class="pc" id="L76">                c.close();</span>
+            }
+        }
+<span class="fc" id="L79">        return feeds;</span>
+    }
+
+    public Cursor getCursorSavedSearch() {
+<span class="fc" id="L83">        return this.db.query(LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME, null, null, null, null, null, LegacyDbContracts.SAVED_SEARCH_TABLE._ID + &quot; DESC&quot;);</span>
+    }
+
+    public boolean isSaved(String id) {
+<span class="fc" id="L87">        boolean out = false;</span>
+<span class="fc" id="L88">        Cursor c = null;</span>
+        try {
+<span class="fc" id="L90">            c = this.db.query(LegacyDbContracts.FEED_TABLE.TABLE_NAME, null, LegacyDbContracts.FEED_TABLE._ID + &quot;=? AND &quot; + LegacyDbContracts.FEED_TABLE.COLUMN_FAVORITE + &quot;!='F'&quot;, new String[]{id}, null, null, null);</span>
+<span class="fc" id="L91">            out = c.moveToFirst();</span>
+        } finally {
+<span class="pc bpc" id="L93" title="3 of 4 branches missed.">            if (c != null) {</span>
+<span class="pc" id="L94">                c.close();</span>
+            }
+        }
+<span class="fc" id="L97">        return out;</span>
+    }
+
+    public void close() {
+<span class="fc" id="L101">        db.close();</span>
+<span class="fc" id="L102">    }</span>
+
+    public SQLiteDatabase getSQLiteDB() {
+<span class="fc" id="L105">        return db;</span>
+    }
+
+    private static class OpenHelper extends SQLiteOpenHelper {
+
+        private final Context appContext;
+
+        OpenHelper(Context context) {
+<span class="fc" id="L113">            super(context, LegacyDbContracts.DATABASE_NAME, null, LegacyDbContracts.DATABASE_VERSION);</span>
+<span class="fc" id="L114">            this.appContext = context.getApplicationContext();</span>
+<span class="fc" id="L115">        }</span>
+
+        private void dropTables(SQLiteDatabase db) {
+<span class="nc" id="L118">            db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME);</span>
+<span class="nc" id="L119">            db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.APP_TABLE.TABLE_NAME);</span>
+<span class="nc" id="L120">            db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.HISTORY_TABLE.TABLE_NAME);</span>
+<span class="nc" id="L121">            db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME);</span>
+<span class="nc" id="L122">        }</span>
+
+        private void createFeedTable(SQLiteDatabase db) {
+<span class="fc" id="L125">            db.execSQL(&quot;CREATE TABLE &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;(&quot;</span>
+                    + LegacyDbContracts.FEED_TABLE._ID + &quot; VARCHAR(300) UNIQUE, &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_TITLE + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_DESCRIPTION + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_FEED + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_URL + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_IMAGE_URL + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_FAVICON + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_TIMESTAMP + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_CATEGORY + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_TYPE + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_ARTICLE_URL + &quot; VARCHAR(300), &quot;
+                    //+&quot;hidden CHAR(1)&quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_HIDDEN + &quot; CHAR(1), &quot;
+                    + LegacyDbContracts.FEED_TABLE.COLUMN_FAVORITE + &quot; VARCHAR(300)&quot;
+                    + &quot;)&quot;
+            );
+
+<span class="fc" id="L143">            db.execSQL(&quot;CREATE INDEX idx_id ON &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot; (&quot; + LegacyDbContracts.FEED_TABLE._ID + &quot;) &quot;);</span>
+<span class="fc" id="L144">            db.execSQL(&quot;CREATE INDEX idx_idtype ON &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot; (&quot; + LegacyDbContracts.FEED_TABLE._ID + &quot;, &quot; + LegacyDbContracts.FEED_TABLE.COLUMN_TYPE + &quot;) &quot;);</span>
+<span class="fc" id="L145">        }</span>
+
+        private void createAppTable(SQLiteDatabase db) {
+
+            // Generates warning/error when inline to execSQL method
+<span class="fc" id="L150">            String sql = &quot;CREATE VIRTUAL TABLE &quot; + LegacyDbContracts.APP_TABLE.TABLE_NAME + &quot; USING FTS3 (&quot;</span>
+                    + LegacyDbContracts.APP_TABLE.COLUMN_TITLE + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.APP_TABLE.COLUMN_PACKAGE + &quot; VARCHAR(300) &quot;
+                    + &quot;)&quot;;
+
+<span class="fc" id="L155">            db.execSQL(sql);</span>
+<span class="fc" id="L156">        }</span>
+
+        private void createHistoryTable(SQLiteDatabase db) {
+<span class="fc" id="L159">            db.execSQL(&quot;CREATE TABLE &quot; + LegacyDbContracts.HISTORY_TABLE.TABLE_NAME + &quot;(&quot;</span>
+                    + LegacyDbContracts.HISTORY_TABLE._ID + &quot; INTEGER PRIMARY KEY, &quot;
+                    + LegacyDbContracts.HISTORY_TABLE.COLUMN_TYPE + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.HISTORY_TABLE.COLUMN_DATA + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.HISTORY_TABLE.COLUMN_URL + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.HISTORY_TABLE.COLUMN_EXTRA_TYPE + &quot; VARCHAR(300), &quot;
+                    + LegacyDbContracts.HISTORY_TABLE.COLUMN_FEED_ID + &quot; VARCHAR(300)&quot;
+                    + &quot;)&quot;
+            );
+<span class="fc" id="L168">        }</span>
+
+        private void createSavedSearchTable(SQLiteDatabase db) {
+
+            // Generates warning/error when inline to execSQL method
+<span class="fc" id="L173">            String sql = &quot;CREATE TABLE &quot; + LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME + &quot;(&quot; +</span>
+                    LegacyDbContracts.SAVED_SEARCH_TABLE._ID + &quot; INTEGER PRIMARY KEY, &quot; +
+                    LegacyDbContracts.SAVED_SEARCH_TABLE.COLUMN_TITLE + &quot; VARCHAR(300), &quot; +
+                    LegacyDbContracts.SAVED_SEARCH_TABLE.COLUMN_QUERY + &quot; VARCHAR(300) UNIQUE)&quot;;
+<span class="fc" id="L177">            db.execSQL(sql);</span>
+<span class="fc" id="L178">        }</span>
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+<span class="fc" id="L182">            createFeedTable(db);</span>
+<span class="fc" id="L183">            createAppTable(db);</span>
+<span class="fc" id="L184">            createHistoryTable(db);</span>
+<span class="fc" id="L185">            createSavedSearchTable(db);</span>
+<span class="fc" id="L186">        }</span>
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+<span class="nc bnc" id="L190" title="All 4 branches missed.">            if (oldVersion == 4 &amp;&amp; newVersion &gt;= 12) {</span>
+<span class="nc" id="L191">                ContentValues contentValues = new ContentValues();</span>
+
+                // shape old FEED_TABLE like the new, and rename it as FEED_TABLE_old
+<span class="nc" id="L194">                db.execSQL(&quot;DROP INDEX IF EXISTS idx_id&quot;);</span>
+<span class="nc" id="L195">                db.execSQL(&quot;DROP INDEX IF EXISTS idx_idtype&quot;);</span>
+<span class="nc" id="L196">                db.execSQL(&quot;ALTER TABLE &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot; RENAME TO &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old&quot;);</span>
+
+<span class="nc" id="L198">                dropTables(db);</span>
+<span class="nc" id="L199">                onCreate(db);</span>
+
+<span class="nc" id="L201">                SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext);</span>
+
+                // ***** recent queries *******
+<span class="nc" id="L204">                List&lt;String&gt; recentQueries = LegacyUtils.loadList(sharedPreferences, &quot;recentsearch&quot;);</span>
+<span class="nc" id="L205">                Collections.reverse(recentQueries);</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">                for (String query : recentQueries) {</span>
+                    // insertRecentSearch
+<span class="nc" id="L208">                    contentValues.clear();</span>
+<span class="nc" id="L209">                    contentValues.put(LegacyDbContracts.HISTORY_TABLE.COLUMN_TYPE, &quot;R&quot;);</span>
+<span class="nc" id="L210">                    contentValues.put(LegacyDbContracts.HISTORY_TABLE.COLUMN_DATA, query);</span>
+<span class="nc" id="L211">                    contentValues.put(LegacyDbContracts.HISTORY_TABLE.COLUMN_URL, &quot;&quot;);</span>
+<span class="nc" id="L212">                    contentValues.put(LegacyDbContracts.HISTORY_TABLE.COLUMN_EXTRA_TYPE, &quot;&quot;);</span>
+<span class="nc" id="L213">                    contentValues.put(LegacyDbContracts.HISTORY_TABLE.COLUMN_FEED_ID, &quot;&quot;);</span>
+<span class="nc" id="L214">                    db.insert(LegacyDbContracts.HISTORY_TABLE.TABLE_NAME, null, contentValues);</span>
+<span class="nc" id="L215">                }</span>
+                // ****************************
+
+                // ****** saved search ********
+<span class="nc" id="L219">                Cursor c = db.query(LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old&quot;, new String[]{&quot;url&quot;}, LegacyDbContracts.FEED_TABLE.COLUMN_FEED + &quot;=''&quot;, null, null, null, null);</span>
+<span class="nc bnc" id="L220" title="All 2 branches missed.">                while (c.moveToNext()) {</span>
+<span class="nc" id="L221">                    final String url = c.getString(0);</span>
+<span class="nc" id="L222">                    final String query = LegacyUtils.getQueryIfSerp(url);</span>
+<span class="nc bnc" id="L223" title="All 2 branches missed.">                    if (query == null)</span>
+<span class="nc" id="L224">                        continue;</span>
+<span class="nc" id="L225">                    contentValues.clear();</span>
+<span class="nc" id="L226">                    contentValues.put(LegacyDbContracts.SAVED_SEARCH_TABLE.COLUMN_QUERY, query);</span>
+<span class="nc" id="L227">                    db.insert(LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME, null, contentValues);</span>
+<span class="nc" id="L228">                }</span>
+                // *****************************
+
+                // ***** saved feed items *****
+<span class="nc" id="L232">                db.execSQL(&quot;DELETE FROM &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old WHERE &quot; + LegacyDbContracts.FEED_TABLE.COLUMN_FEED + &quot;='' &quot;);</span>
+<span class="nc" id="L233">                db.execSQL(&quot;INSERT INTO &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot; SELECT *,'','F' FROM &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old&quot;);</span>
+<span class="nc" id="L234">                db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old&quot;);</span>
+                // ****************************
+
+<span class="nc bnc" id="L237" title="All 4 branches missed.">            } else if (oldVersion == 12 &amp;&amp; newVersion &gt;= 14) {</span>
+                // shape old FEED_TABLE like the new, and rename it as FEED_TABLE_old
+<span class="nc" id="L239">                db.execSQL(&quot;DROP INDEX IF EXISTS idx_id&quot;);</span>
+<span class="nc" id="L240">                db.execSQL(&quot;DROP INDEX IF EXISTS idx_idtype&quot;);</span>
+<span class="nc" id="L241">                db.execSQL(&quot;ALTER TABLE &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot; RENAME TO &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old&quot;);</span>
+
+<span class="nc" id="L243">                db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME);</span>
+<span class="nc" id="L244">                createFeedTable(db);</span>
+
+                // ***** saved feed items *****
+<span class="nc" id="L247">                db.execSQL(&quot;DELETE FROM &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old WHERE &quot; + LegacyDbContracts.FEED_TABLE.COLUMN_FEED + &quot;='' &quot;);</span>
+<span class="nc" id="L248">                db.execSQL(&quot;INSERT INTO &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot; SELECT &quot; +</span>
+                        LegacyDbContracts.FEED_TABLE._ID + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_TITLE + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_DESCRIPTION + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_FEED + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_URL + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_IMAGE_URL + &quot;,&quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_FAVICON + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_TIMESTAMP + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_CATEGORY + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_TYPE + &quot;, &quot; +
+                        &quot;'' AS &quot; + LegacyDbContracts.FEED_TABLE.COLUMN_ARTICLE_URL + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_HIDDEN + &quot; FROM &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old&quot;);
+<span class="nc" id="L261">                db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old&quot;);</span>
+                // ****************************
+<span class="nc bnc" id="L263" title="All 4 branches missed.">            } else if (oldVersion == 14 &amp;&amp; newVersion &gt;= 15) {</span>
+                // shape old FEED_TABLE like the new, and rename it as FEED_TABLE_old
+<span class="nc" id="L265">                db.execSQL(&quot;DROP INDEX IF EXISTS idx_id&quot;);</span>
+<span class="nc" id="L266">                db.execSQL(&quot;DROP INDEX IF EXISTS idx_idtype&quot;);</span>
+<span class="nc" id="L267">                db.execSQL(&quot;ALTER TABLE &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot; RENAME TO &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old&quot;);</span>
+
+<span class="nc" id="L269">                db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME);</span>
+<span class="nc" id="L270">                createFeedTable(db);</span>
+
+                // ***** saved feed items *****
+<span class="nc" id="L273">                db.execSQL(&quot;DELETE FROM &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old WHERE &quot; + LegacyDbContracts.FEED_TABLE.COLUMN_FEED + &quot;='' &quot;);</span>
+<span class="nc" id="L274">                db.execSQL(&quot;INSERT INTO &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot; SELECT &quot; +</span>
+                        LegacyDbContracts.FEED_TABLE._ID + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_TITLE + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_DESCRIPTION + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_FEED + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_URL + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_IMAGE_URL + &quot;,&quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_FAVICON + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_TIMESTAMP + &quot;, &quot; + &quot;&quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_CATEGORY + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_TYPE + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_ARTICLE_URL + &quot;, &quot; +
+                        LegacyDbContracts.FEED_TABLE.COLUMN_HIDDEN + &quot;, &quot; +
+                        &quot;'F' FROM &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old&quot;);
+<span class="nc" id="L288">                db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot;_old&quot;);</span>
+                //***** set new favlue for favorite *****
+<span class="nc" id="L290">                String newFavoriteValue = String.valueOf(System.currentTimeMillis());</span>
+<span class="nc" id="L291">                db.execSQL(&quot;UPDATE &quot; + LegacyDbContracts.FEED_TABLE.TABLE_NAME + &quot; SET &quot; + LegacyDbContracts.FEED_TABLE.COLUMN_FAVORITE + &quot;=&quot; + newFavoriteValue + &quot; WHERE &quot; + LegacyDbContracts.FEED_TABLE.COLUMN_HIDDEN + &quot;='F'&quot;);</span>
+                // ****************************
+<span class="nc bnc" id="L293" title="All 4 branches missed.">            } else if (oldVersion == 15 &amp;&amp; newVersion &gt;= 16) {</span>
+<span class="nc" id="L294">                db.execSQL(&quot;ALTER TABLE &quot; + LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME + &quot; RENAME TO &quot; + LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME + &quot;_old&quot;);</span>
+<span class="nc" id="L295">                db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME);</span>
+<span class="nc" id="L296">                createSavedSearchTable(db);</span>
+
+                // Generates warning/error when inline to execSQL method
+<span class="nc" id="L299">                String sql = &quot;INSERT INTO &quot; + LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME + &quot; SELECT &quot; +</span>
+                        LegacyDbContracts.SAVED_SEARCH_TABLE._ID + &quot;, &quot; +
+                        LegacyDbContracts.SAVED_SEARCH_TABLE.COLUMN_QUERY + &quot;, &quot; +
+                        LegacyDbContracts.SAVED_SEARCH_TABLE.COLUMN_QUERY + &quot; FROM &quot; + LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME + &quot;_old&quot;;
+<span class="nc" id="L303">                db.execSQL(sql);</span>
+
+<span class="nc" id="L305">                db.execSQL(&quot;DROP TABLE IF EXISTS &quot; + LegacyDbContracts.SAVED_SEARCH_TABLE.TABLE_NAME + &quot;_old&quot;);</span>
+<span class="nc" id="L306">            } else {</span>
+<span class="nc" id="L307">                dropTables(db);</span>
+<span class="nc" id="L308">                onCreate(db);</span>
+            }
+<span class="nc" id="L310">        }</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

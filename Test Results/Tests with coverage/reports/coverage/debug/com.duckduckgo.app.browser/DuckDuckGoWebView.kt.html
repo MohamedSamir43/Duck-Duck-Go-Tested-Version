@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DuckDuckGoWebView.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.browser</a> &gt; <span class="el_source">DuckDuckGoWebView.kt</span></div><h1>DuckDuckGoWebView.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2017 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.browser
+
+import android.annotation.SuppressLint
+import android.content.Context
+import androidx.core.view.NestedScrollingChild
+import androidx.core.view.NestedScrollingChildHelper
+import androidx.core.view.ViewCompat
+import android.util.AttributeSet
+import android.view.MotionEvent
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
+import android.webkit.WebView
+
+/**
+ * WebView subclass which allows the WebView to
+ *   - hide the toolbar when placed in a CoordinatorLayout
+ *   - add the flag so that users' typing isn't used for personalisation
+ *
+ * Originally based on https://github.com/takahirom/webview-in-coordinatorlayout for scrolling behaviour
+ */
+class DuckDuckGoWebView : WebView, NestedScrollingChild {
+    private var lastY: Int = 0
+<span class="fc" id="L39">    private val scrollOffset = IntArray(2)</span>
+<span class="fc" id="L40">    private val scrollConsumed = IntArray(2)</span>
+    private var nestedOffsetY: Int = 0
+<span class="fc" id="L42">    private var nestedScrollHelper: NestedScrollingChildHelper = NestedScrollingChildHelper(this)</span>
+
+<span class="fc" id="L44">    constructor(context: Context) : this(context, null)</span>
+<span class="fc" id="L45">    constructor(context: Context, attrs: AttributeSet?) : super(context, attrs) {</span>
+<span class="fc" id="L46">        isNestedScrollingEnabled = true</span>
+    }
+
+    override fun onCreateInputConnection(outAttrs: EditorInfo): InputConnection? {
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        val inputConnection = super.onCreateInputConnection(outAttrs) ?: return null</span>
+
+<span class="nc" id="L52">        addNoPersonalisedFlag(outAttrs)</span>
+
+<span class="nc" id="L54">        return inputConnection</span>
+    }
+
+
+    private fun addNoPersonalisedFlag(outAttrs: EditorInfo) {
+<span class="nc" id="L59">        outAttrs.imeOptions = outAttrs.imeOptions or IME_FLAG_NO_PERSONALIZED_LEARNING</span>
+<span class="nc" id="L60">    }</span>
+
+    @SuppressLint(&quot;ClickableViewAccessibility&quot;)
+    override fun onTouchEvent(ev: MotionEvent): Boolean {
+<span class="nc" id="L64">        var returnValue = false</span>
+
+<span class="nc" id="L66">        val event = MotionEvent.obtain(ev)</span>
+<span class="nc" id="L67">        val action = event.actionMasked</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (action == MotionEvent.ACTION_DOWN) {</span>
+<span class="nc" id="L69">            nestedOffsetY = 0</span>
+        }
+<span class="nc" id="L71">        val eventY = event.y.toInt()</span>
+<span class="nc" id="L72">        event.offsetLocation(0f, nestedOffsetY.toFloat())</span>
+
+<span class="nc bnc" id="L74" title="All 3 branches missed.">        when (action) {</span>
+            MotionEvent.ACTION_MOVE -&gt; {
+<span class="nc" id="L76">                var deltaY = lastY - eventY</span>
+
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                if (dispatchNestedPreScroll(0, deltaY, scrollConsumed, scrollOffset)) {</span>
+<span class="nc" id="L79">                    deltaY -= scrollConsumed[1]</span>
+<span class="nc" id="L80">                    lastY = eventY - scrollOffset[1]</span>
+<span class="nc" id="L81">                    event.offsetLocation(0f, (-scrollOffset[1]).toFloat())</span>
+<span class="nc" id="L82">                    nestedOffsetY += scrollOffset[1]</span>
+                }
+
+<span class="nc" id="L85">                returnValue = super.onTouchEvent(event)</span>
+
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                if (dispatchNestedScroll(0, scrollOffset[1], 0, deltaY, scrollOffset)) {</span>
+<span class="nc" id="L88">                    event.offsetLocation(0f, scrollOffset[1].toFloat())</span>
+<span class="nc" id="L89">                    nestedOffsetY += scrollOffset[1]</span>
+<span class="nc" id="L90">                    lastY -= scrollOffset[1]</span>
+                }
+            }
+
+            MotionEvent.ACTION_DOWN -&gt; {
+<span class="nc" id="L95">                returnValue = super.onTouchEvent(event)</span>
+<span class="nc" id="L96">                lastY = eventY</span>
+<span class="nc" id="L97">                startNestedScroll(ViewCompat.SCROLL_AXIS_VERTICAL)</span>
+            }
+
+            else -&gt; {
+<span class="nc" id="L101">                returnValue = super.onTouchEvent(event)</span>
+<span class="nc" id="L102">                stopNestedScroll()</span>
+            }
+        }
+
+<span class="nc" id="L106">        return returnValue</span>
+    }
+
+    override fun setNestedScrollingEnabled(enabled: Boolean) {
+<span class="fc" id="L110">        nestedScrollHelper.isNestedScrollingEnabled = enabled</span>
+<span class="fc" id="L111">    }</span>
+
+    override fun stopNestedScroll() {
+<span class="nc" id="L114">        nestedScrollHelper.stopNestedScroll()</span>
+<span class="nc" id="L115">    }</span>
+
+<span class="nc" id="L117">    override fun isNestedScrollingEnabled(): Boolean = nestedScrollHelper.isNestedScrollingEnabled</span>
+
+<span class="nc" id="L119">    override fun startNestedScroll(axes: Int): Boolean = nestedScrollHelper.startNestedScroll(axes)</span>
+
+<span class="nc" id="L121">    override fun hasNestedScrollingParent(): Boolean = nestedScrollHelper.hasNestedScrollingParent()</span>
+
+    override fun dispatchNestedScroll(dxConsumed: Int, dyConsumed: Int, dxUnconsumed: Int, dyUnconsumed: Int, offsetInWindow: IntArray?): Boolean =
+<span class="nc" id="L124">        nestedScrollHelper.dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, offsetInWindow)</span>
+
+    override fun dispatchNestedPreScroll(dx: Int, dy: Int, consumed: IntArray?, offsetInWindow: IntArray?): Boolean =
+<span class="nc" id="L127">        nestedScrollHelper.dispatchNestedPreScroll(dx, dy, consumed, offsetInWindow)</span>
+
+    override fun dispatchNestedFling(velocityX: Float, velocityY: Float, consumed: Boolean): Boolean =
+<span class="nc" id="L130">        nestedScrollHelper.dispatchNestedFling(velocityX, velocityY, consumed)</span>
+
+    override fun dispatchNestedPreFling(velocityX: Float, velocityY: Float): Boolean =
+<span class="nc" id="L133">        nestedScrollHelper.dispatchNestedPreFling(velocityX, velocityY)</span>
+
+<span class="fc" id="L135">    companion object {</span>
+
+        /*
+         * Taken from EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING
+         * We can't use that value directly as it was only added on Oreo, but we can apply the value anyway.
+         */
+        private const val IME_FLAG_NO_PERSONALIZED_LEARNING = 0x1000000
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

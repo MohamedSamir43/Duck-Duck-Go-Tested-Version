@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Pixel.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.statistics.pixels</a> &gt; <span class="el_source">Pixel.kt</span></div><h1>Pixel.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.statistics.pixels
+
+import com.duckduckgo.app.global.device.DeviceInfo
+import com.duckduckgo.app.statistics.VariantManager
+import com.duckduckgo.app.statistics.api.PixelService
+import com.duckduckgo.app.statistics.store.StatisticsDataStore
+import io.reactivex.Completable
+import io.reactivex.schedulers.Schedulers
+import timber.log.Timber
+import javax.inject.Inject
+
+interface Pixel {
+
+<span class="fc" id="L30">    enum class PixelName(val pixelName: String) {</span>
+
+<span class="fc" id="L32">        APP_LAUNCH(&quot;ml&quot;),</span>
+<span class="fc" id="L33">        FORGET_ALL_EXECUTED(&quot;mf&quot;),</span>
+
+<span class="fc" id="L35">        PRIVACY_DASHBOARD_OPENED(&quot;mp&quot;),</span>
+<span class="fc" id="L36">        PRIVACY_DASHBOARD_SCORECARD(&quot;mp_c&quot;),</span>
+<span class="fc" id="L37">        PRIVACY_DASHBOARD_ENCRYPTION(&quot;mp_e&quot;),</span>
+<span class="fc" id="L38">        PRIVACY_DASHBOARD_GLOBAL_STATS(&quot;mp_s&quot;),</span>
+<span class="fc" id="L39">        PRIVACY_DASHBOARD_PRIVACY_PRACTICES(&quot;mp_p&quot;),</span>
+<span class="fc" id="L40">        PRIVACY_DASHBOARD_NETWORKS(&quot;mp_n&quot;),</span>
+
+<span class="fc" id="L42">        DEFAULT_BROWSER_INFO_VIEWED(&quot;mdb_v&quot;),</span>
+<span class="fc" id="L43">        DEFAULT_BROWSER_SET(&quot;mdb_s&quot;),</span>
+<span class="fc" id="L44">        DEFAULT_BROWSER_NOT_SET(&quot;mdb_n&quot;),</span>
+
+<span class="fc" id="L46">        LONG_PRESS(&quot;mlp&quot;),</span>
+<span class="fc" id="L47">        LONG_PRESS_DOWNLOAD_IMAGE(&quot;mlp_i&quot;),</span>
+<span class="fc" id="L48">        LONG_PRESS_NEW_TAB(&quot;mlp_t&quot;),</span>
+<span class="fc" id="L49">        LONG_PRESS_NEW_BACKGROUND_TAB(&quot;mlp_b&quot;),</span>
+<span class="fc" id="L50">        LONG_PRESS_SHARE(&quot;mlp_s&quot;),</span>
+<span class="fc" id="L51">        LONG_PRESS_COPY_URL(&quot;mlp_c&quot;),</span>
+
+<span class="fc" id="L53">        SETTINGS_OPENED(&quot;ms&quot;),</span>
+<span class="fc" id="L54">        SETTINGS_THEME_TOGGLED_LIGHT(&quot;ms_tl&quot;),</span>
+<span class="fc" id="L55">        SETTINGS_THEME_TOGGLED_DARK(&quot;ms_td&quot;),</span>
+
+<span class="fc" id="L57">        HTTPS_UPGRADE_SITE_ERROR(&quot;ehd&quot;),</span>
+<span class="fc" id="L58">        HTTPS_UPGRADE_SITE_SUMMARY(&quot;ehs&quot;),</span>
+
+<span class="fc" id="L60">        SURVEY_CTA_SHOWN(pixelName = &quot;mus_cs&quot;),</span>
+<span class="fc" id="L61">        SURVEY_CTA_DISMISSED(pixelName = &quot;mus_cd&quot;),</span>
+<span class="fc" id="L62">        SURVEY_CTA_LAUNCHED_SURVEY(pixelName = &quot;mus_cl&quot;),</span>
+<span class="fc" id="L63">        SURVEY_SURVEY_DISMISSED(pixelName = &quot;mus_sd&quot;)</span>
+    }
+
+<span class="nc" id="L66">    object PixelParameter {</span>
+        const val URL = &quot;url&quot;
+        const val ERROR_CODE = &quot;error_code&quot;
+        const val TOTAL_COUNT = &quot;total&quot;
+        const val FAILURE_COUNT = &quot;failures&quot;
+        const val APP_VERSION = &quot;app_version&quot;
+    }
+
+    fun fire(pixel: PixelName, parameters: Map&lt;String, String?&gt; = emptyMap())
+
+    fun fireCompletable(pixel: Pixel.PixelName, parameters: Map&lt;String, String?&gt;): Completable
+
+}
+
+<span class="fc" id="L80">class ApiBasedPixel @Inject constructor(</span>
+    private val api: PixelService,
+    private val statisticsDataStore: StatisticsDataStore,
+    private val variantManager: VariantManager,
+    private val deviceInfo: DeviceInfo
+) : Pixel {
+
+    override fun fire(pixel: Pixel.PixelName, parameters: Map&lt;String, String?&gt;) {
+<span class="fc" id="L88">        fireCompletable(pixel, parameters)</span>
+<span class="fc" id="L89">            .subscribeOn(Schedulers.io())</span>
+<span class="fc" id="L90">            .subscribe({</span>
+<span class="fc" id="L91">                Timber.v(&quot;Pixel sent: ${pixel.pixelName}&quot;)</span>
+<span class="fc" id="L92">            }, {</span>
+<span class="nc" id="L93">                Timber.w(&quot;Pixel failed: ${pixel.pixelName}&quot;, it)</span>
+<span class="nc" id="L94">            })</span>
+<span class="fc" id="L95">    }</span>
+
+    override fun fireCompletable(pixel: Pixel.PixelName, parameters: Map&lt;String, String?&gt;): Completable {
+<span class="pc bpc" id="L98" title="1 of 4 branches missed.">        val atb = statisticsDataStore.atb?.formatWithVariant(variantManager.getVariant()) ?: &quot;&quot;</span>
+<span class="fc" id="L99">        return api.fire(pixel.pixelName, deviceInfo.formFactor().description, atb, parameters)</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrivacyGradeRendererExtension.kt</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=0;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">debugAndroidTest</a> &gt; <a href="index.source.html" class="el_package">com.duckduckgo.app.privacy.renderer</a> &gt; <span class="el_source">PrivacyGradeRendererExtension.kt</span></div><h1>PrivacyGradeRendererExtension.kt</h1><pre class="source lang-java linenums">/*
+ * Copyright (c) 2018 DuckDuckGo
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.duckduckgo.app.privacy.renderer
+
+import androidx.annotation.DrawableRes
+import com.duckduckgo.app.browser.R
+import com.duckduckgo.app.privacy.model.PrivacyGrade
+
+@DrawableRes
+fun PrivacyGrade.icon(): Int {
+<span class="pc bpc" id="L25" title="3 of 8 branches missed.">    return when (this) {</span>
+<span class="fc" id="L26">        PrivacyGrade.A -&gt; R.drawable.privacygrade_icon_a</span>
+<span class="nc" id="L27">        PrivacyGrade.B_PLUS -&gt; R.drawable.privacygrade_icon_b_plus</span>
+<span class="fc" id="L28">        PrivacyGrade.B -&gt; R.drawable.privacygrade_icon_b</span>
+<span class="nc" id="L29">        PrivacyGrade.C_PLUS -&gt; R.drawable.privacygrade_icon_c_plus</span>
+<span class="fc" id="L30">        PrivacyGrade.C -&gt; R.drawable.privacygrade_icon_c</span>
+<span class="fc" id="L31">        PrivacyGrade.D -&gt; R.drawable.privacygrade_icon_d</span>
+<span class="pc" id="L32">        PrivacyGrade.UNKNOWN -&gt; R.drawable.privacygrade_icon_unknown</span>
+    }
+}
+
+@DrawableRes
+fun PrivacyGrade.smallIcon(): Int {
+<span class="pc bpc" id="L38" title="3 of 8 branches missed.">    return when (this) {</span>
+<span class="fc" id="L39">        PrivacyGrade.A -&gt; R.drawable.privacygrade_icon_small_a</span>
+<span class="nc" id="L40">        PrivacyGrade.B_PLUS -&gt; R.drawable.privacygrade_icon_small_b_plus</span>
+<span class="fc" id="L41">        PrivacyGrade.B -&gt; R.drawable.privacygrade_icon_small_b</span>
+<span class="nc" id="L42">        PrivacyGrade.C_PLUS -&gt; R.drawable.privacygrade_icon_small_c_plus</span>
+<span class="fc" id="L43">        PrivacyGrade.C -&gt; R.drawable.privacygrade_icon_small_c</span>
+<span class="fc" id="L44">        PrivacyGrade.D -&gt; R.drawable.privacygrade_icon_small_d</span>
+<span class="pc" id="L45">        PrivacyGrade.UNKNOWN -&gt; 0</span>
+    }
+}
+
+@DrawableRes
+fun PrivacyGrade.banner(privacyOn: Boolean): Int {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">    if (privacyOn) {</span>
+<span class="fc" id="L52">        return privacyOnBanner()</span>
+    }
+<span class="fc" id="L54">    return privacyOffBanner()</span>
+}
+
+@DrawableRes
+private fun PrivacyGrade.privacyOnBanner(): Int {
+<span class="pc bpc" id="L59" title="3 of 8 branches missed.">    return when (this) {</span>
+<span class="fc" id="L60">        PrivacyGrade.A -&gt; R.drawable.privacygrade_banner_a_on</span>
+<span class="nc" id="L61">        PrivacyGrade.B_PLUS -&gt; R.drawable.privacygrade_banner_b_plus_on</span>
+<span class="fc" id="L62">        PrivacyGrade.B -&gt; R.drawable.privacygrade_banner_b_on</span>
+<span class="nc" id="L63">        PrivacyGrade.C_PLUS -&gt; R.drawable.privacygrade_banner_c_plus_on</span>
+<span class="fc" id="L64">        PrivacyGrade.C -&gt; R.drawable.privacygrade_banner_c_on</span>
+<span class="fc" id="L65">        PrivacyGrade.D -&gt; R.drawable.privacygrade_banner_d_on</span>
+<span class="pc" id="L66">        PrivacyGrade.UNKNOWN -&gt; R.drawable.privacygrade_banner_unknown</span>
+    }
+}
+
+@DrawableRes
+private fun PrivacyGrade.privacyOffBanner(): Int {
+<span class="pc bpc" id="L72" title="3 of 8 branches missed.">    return when (this) {</span>
+<span class="fc" id="L73">        PrivacyGrade.A -&gt; R.drawable.privacygrade_banner_a_off</span>
+<span class="nc" id="L74">        PrivacyGrade.B_PLUS -&gt; R.drawable.privacygrade_banner_b_plus_off</span>
+<span class="fc" id="L75">        PrivacyGrade.B -&gt; R.drawable.privacygrade_banner_b_off</span>
+<span class="nc" id="L76">        PrivacyGrade.C_PLUS -&gt; R.drawable.privacygrade_banner_c_plus_off</span>
+<span class="fc" id="L77">        PrivacyGrade.C -&gt; R.drawable.privacygrade_banner_c_off</span>
+<span class="fc" id="L78">        PrivacyGrade.D -&gt; R.drawable.privacygrade_banner_d_off</span>
+<span class="pc" id="L79">        PrivacyGrade.UNKNOWN -&gt; R.drawable.privacygrade_banner_unknown</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span>Generated by the Android Gradle plugin 3.2.1</div></body></html>
